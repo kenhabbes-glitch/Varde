@@ -1,0 +1,7 @@
+node_modules/
+data.json
+*.tmp
+platform-key.pem
+firmware/hovedenhet/test/test_logic
+firmware/hovedenhet/test/host_main
+firmware/hovedenhet/build/

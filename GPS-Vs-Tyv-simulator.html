@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>GPS Vs Tyv-simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: kontrollrom – kart og maskinbetjening til venstre, mottakssentral og logg til høyre */
+:root{
+  --bg:#ECEDE8; --surface:#F8F8F4; --ink:#1D2227; --muted:#5D656E; --line:#CDD0C7;
+  --hivis:#E6A11A; --hivis-ink:#5E4100; --ok:#2C7F52; --warn:#B86E00; --crit:#C2372C; --radio:#23788A;
+  --map:#E2E4DC; --map-grid:#D2D5CB; --road:#D3CCBA; --crit-soft:rgba(194,55,44,.13); --warn-soft:rgba(184,110,0,.12); --ok-soft:rgba(44,127,82,.12); --radio-soft:rgba(35,120,138,.12);
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161B; --surface:#1A2027; --ink:#E6E9ED; --muted:#98A2AD; --line:#2C343E;
+  --hivis:#F0B03A; --hivis-ink:#F6D58D; --ok:#4CC08A; --warn:#EFA43B; --crit:#F0675B; --radio:#55B5C8;
+  --map:#171E25; --map-grid:#212A33; --road:#252E37; --crit-soft:rgba(240,103,91,.17); --warn-soft:rgba(239,164,59,.15); --ok-soft:rgba(76,192,138,.14); --radio-soft:rgba(85,181,200,.14);
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#12161B; --surface:#1A2027; --ink:#E6E9ED; --muted:#98A2AD; --line:#2C343E;
+  --hivis:#F0B03A; --hivis-ink:#F6D58D; --ok:#4CC08A; --warn:#EFA43B; --crit:#F0675B; --radio:#55B5C8;
+  --map:#171E25; --map-grid:#212A33; --road:#252E37; --crit-soft:rgba(240,103,91,.17); --warn-soft:rgba(239,164,59,.15); --ok-soft:rgba(76,192,138,.14); --radio-soft:rgba(85,181,200,.14);
+  color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:34px;font-weight:700;letter-spacing:.2px;line-height:1.05}
+h2{font-size:18px;font-weight:600}
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.brand{min-width:0;max-width:62ch}
+.eyebrow{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:1.4px;font-size:12px;color:var(--hivis-ink);display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:"";width:18px;height:6px;background:repeating-linear-gradient(135deg,var(--hivis) 0 4px,var(--ink) 4px 8px);border-radius:1px}
+.lede{margin:6px 0 0;color:var(--muted)}
+.clock{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.clock-box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;display:flex;flex-direction:column}
+.clock-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.clock-val{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 13px var(--f-body);padding:7px 11px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;border-radius:7px;cursor:pointer;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.danger{border-color:color-mix(in srgb,var(--crit) 45%,var(--line));color:var(--crit)}
+.btn.danger:hover:not(:disabled){background:var(--crit-soft)}
+.btn.ghost{background:transparent}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--hivis);outline-offset:2px}
+.scen{display:flex;flex-direction:column;gap:8px}
+.label{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:1.2px;font-size:12px;color:var(--muted)}
+.scen-row{display:flex;flex-wrap:wrap;gap:8px}
+.scen-btn{text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:1px;max-width:100%}
+.scen-btn b{font-family:var(--f-display);font-weight:600;font-size:15px}
+.scen-btn span{font-size:12px;color:var(--muted)}
+.scen-btn.on{border-color:var(--hivis);box-shadow:inset 0 0 0 1px var(--hivis)}
+.scen-btn:hover{border-color:var(--muted)}
+.explain{border:1px solid var(--line);border-left:4px solid var(--hivis);border-radius:0;background:var(--surface);padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.explain strong{font-family:var(--f-display);font-size:17px;font-weight:600}
+.explain span{color:var(--ink);max-width:90ch}
+.explain.pulse{animation:pulse .9s ease}
+@keyframes pulse{0%{background:var(--warn-soft)}100%{background:var(--surface)}}
+.grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.sub{font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.lg-lte{border-color:var(--muted)!important}
+.lg-lora{border-color:var(--radio)!important}
+.lg-bad{border-color:var(--crit)!important;border-top-style:dashed!important}
+#map{width:100%;height:auto;display:block;border-radius:8px;user-select:none;-webkit-user-select:none}
+.ground{fill:var(--map)}
+.grid-l{stroke:var(--map-grid);stroke-width:1}
+.road{fill:none;stroke:var(--road);stroke-width:22;stroke-linecap:round}
+.fence{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 5;opacity:.7}
+.maptxt{fill:var(--muted);font:500 11px var(--f-body)}
+.mast{fill:none;stroke:var(--ink);stroke-width:1.6}
+.mastdot{fill:var(--ink)}
+.satb{fill:var(--ink)}
+.satp{fill:var(--radio)}
+.scale{stroke:var(--ink);stroke-width:1.4}
+.up{stroke:var(--muted);stroke-width:1;opacity:.35}
+.up.bad{stroke:var(--crit);stroke-dasharray:4 4;opacity:.75}
+.xmark{fill:var(--crit);font:700 16px var(--f-body)}
+.mesh{stroke:var(--radio);stroke-width:1.4;opacity:.6}
+.mesh.bad{stroke:var(--crit);stroke-dasharray:3 5;opacity:.6}
+.fl{stroke-width:3.5;stroke-linecap:round}
+.fl-hb{stroke:var(--ok)}.fl-tag{stroke:var(--radio);stroke-width:2}.fl-alarm{stroke:var(--crit)}.fl-lora{stroke:var(--radio)}.fl-info{stroke:var(--warn)}.fl-report{stroke:var(--warn)}
+.ring{fill:none;stroke:var(--muted);stroke-dasharray:3 4;opacity:.65}
+.ring.ber{stroke:var(--radio);fill:var(--radio-soft);opacity:1}
+.ring.hot{fill:var(--crit-soft);stroke:var(--crit);opacity:1}
+.siren{fill:none;stroke:var(--crit);stroke-width:3;opacity:.8}
+@media (prefers-reduced-motion:no-preference){.siren{animation:siren 1s ease-out infinite;transform-box:fill-box;transform-origin:center}}
+@keyframes siren{0%{opacity:.9;transform:scale(.7)}100%{opacity:0;transform:scale(1.5)}}
+.mach{cursor:pointer}
+.m-body{fill:var(--hivis);stroke:var(--hivis-ink);stroke-width:1}
+.m-cab{fill:var(--ink);opacity:.85}
+.m-id{fill:var(--hivis-ink);font:700 14px var(--f-display)}
+.m-lab{fill:var(--ink);font:600 12px var(--f-display)}
+.sel{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3}
+.dot{stroke:var(--surface);stroke-width:2}
+.d-ok{fill:var(--ok)}.d-ber{fill:var(--radio)}.d-warn{fill:var(--warn)}.d-crit{fill:var(--crit)}.d-mute{fill:var(--muted)}
+.drag{cursor:grab;touch-action:none}
+.drag:active{cursor:grabbing}
+.hit{fill:transparent}
+.thief-b{fill:var(--crit)}
+.elk-b{fill:#8A5A2B}
+.ent-lab{fill:var(--ink);font:600 11px var(--f-body)}
+.jam-core{fill:var(--crit-soft);stroke:var(--crit);stroke-width:1.5;stroke-dasharray:6 4}
+.jam-noise{fill:none;stroke:var(--crit);stroke-width:1;stroke-dasharray:2 6;opacity:.5}
+.jam-box{fill:var(--crit)}
+.jam-txt{fill:#fff;font:700 10px var(--f-body);letter-spacing:.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.c-ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.c-bad{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.c-warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.c-ber{background:var(--radio-soft);color:var(--radio);border-color:transparent}
+.c-mute{color:var(--muted)}
+.acts{display:flex;flex-direction:column;gap:10px}
+.grp{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px;align-items:start}
+@media (max-width:520px){.grp{grid-template-columns:minmax(0,1fr)}}
+.grp-h{font-family:var(--f-display);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding-top:7px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.jam-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.jam-row label{display:flex;align-items:center;gap:6px;font-size:13px}
+.jam-row input[type=range]{width:140px;accent-color:var(--crit)}
+.note{font-size:12px;color:var(--muted);margin:0}
+.alarm{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--crit);background:var(--crit-soft);border-radius:8px;padding:10px 12px}
+.alarm-h{font-family:var(--f-display);font-weight:700;font-size:16px;color:var(--crit);text-transform:uppercase;letter-spacing:.6px}
+.alarm-b{font-size:13px}
+.alarms{display:flex;flex-direction:column;gap:8px}
+.allclear{font-size:13px;color:var(--ok);border:1px dashed var(--line);border-radius:8px;padding:8px 12px}
+.urows{display:flex;flex-direction:column}
+.urow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.u-name{font-family:var(--f-display);font-size:16px;font-weight:600}
+.u-name b{display:inline-block;min-width:16px}
+.u-meta{grid-column:1/-1;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.u-reason{grid-column:1/-1;font-size:13px}
+.u-reason:empty{display:none}
+.pill{font:600 12px var(--f-body);padding:2px 10px;border-radius:999px;align-self:center}
+.p-Normal{background:var(--ok-soft);color:var(--ok)}
+.p-Forsinket{background:var(--warn-soft);color:var(--warn)}
+.p-Mistenkelig{background:var(--warn);color:var(--surface)}
+.p-Alarm{background:var(--crit);color:#fff}
+.logcard label{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+#log{list-style:none;margin:0;padding:0;max-height:440px;overflow:auto;font-size:12.5px;display:flex;flex-direction:column}
+#log li{display:grid;grid-template-columns:62px 58px minmax(0,1fr);gap:8px;padding:5px 0;border-top:1px solid var(--line)}
+#log time{font-family:var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.who{font-family:var(--f-mono);font-size:11.5px;font-weight:500}
+.w-c{color:var(--ink)}.w-u{color:var(--hivis-ink)}.w-x{color:var(--radio)}
+.lv-alarm .txt{color:var(--crit);font-weight:500}
+.lv-warn .txt{color:var(--warn)}
+.lv-ok .txt{color:var(--ok)}
+.lv-hb .txt{color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);max-width:90ch}
+.cone{fill:var(--radio-soft);stroke:var(--radio);stroke-width:.8;opacity:.85}
+.cone.hot{fill:var(--crit-soft);stroke:var(--crit);opacity:1}
+.cone.bad{fill:none;stroke:var(--crit);stroke-dasharray:3 3;opacity:.9}
+.pod{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.pod.bad{fill:var(--crit)}
+.lg-cam{border-color:var(--radio)!important;border-top-width:6px!important;opacity:.35}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.imgs-h{font-family:var(--f-display);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.snap{margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.snap svg{width:100%;height:auto;border-radius:6px;display:block}
+.snap figcaption{font-size:11.5px;color:var(--muted)}
+.camseg button{font-size:12px;padding:6px 9px}
+.tag{stroke:var(--surface);stroke-width:1.5}
+.t-ok{fill:var(--radio)}.t-warn{fill:var(--warn)}.t-alarm{fill:var(--crit)}.t-out{fill:var(--muted)}
+.tag-lab{fill:var(--ink);font:600 10px var(--f-body)}
+.taglink{stroke:var(--radio);stroke-width:.8;stroke-dasharray:2 3;opacity:.7}
+.gw{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.gw-dot{fill:var(--radio)}
+.fl-tag{stroke:var(--radio);stroke-width:2}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 10px;padding:9px 0;border-top:1px solid var(--line);align-items:center}
+.t-name{font-family:var(--f-display);font-size:15px;font-weight:600;min-width:0}
+.t-id{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-left:6px}
+.t-meta{grid-column:1/-1;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.p-ok{background:var(--ok-soft);color:var(--ok)}.p-warn{background:var(--warn-soft);color:var(--warn)}.p-alarm{background:var(--crit);color:#fff}.p-out{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px}
+.walker{fill:var(--muted);stroke:var(--surface);stroke-width:1}
+.core{fill:none;stroke:var(--ink);stroke-width:.8;stroke-dasharray:1 3;opacity:.6}
+.hut{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.hut.k{fill:var(--muted);fill-opacity:.35}
+.hut.al{stroke:var(--crit);stroke-width:2}
+.door{stroke:var(--ok);stroke-width:3}
+.door.open{stroke:var(--crit)}
+.hrow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 10px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.hrow:first-of-type{border-top:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Konseptdemo · alarmenhet v1</div>
+      <h1>GPS Vs Tyv</h1>
+      <p class="lede">Dra personen, elgen og jammeren rundt på anlegget, eller kjør et scenario. Kameraene bekrefter personer og sender bilder, enheten leser maskinens CAN-buss, og skuffer og hengere har egne brikker. Til venstre ser du hva enhetene gjør lokalt, til høyre hva mottakssentralen får vite. Velg miljø for å se hvordan reglene endrer seg mellom skog og by.</p>
+    </div>
+    <div class="clock">
+      <div class="clock-box"><span class="clock-label">Simulert tid</span><span id="clock" class="clock-val">02:14:00</span></div>
+      <div class="seg" role="group" aria-label="Hastighet" id="speed">
+        <button type="button" data-speed="1">1×</button><button type="button" data-speed="5" class="on">5×</button><button type="button" data-speed="20">20×</button>
+      </div>
+      <button type="button" class="btn" id="pause">Pause</button>
+      <button type="button" class="btn" id="resetBtn">Nullstill</button>
+    </div>
+  </header>
+
+  <section class="scen" aria-label="Scenarioer">
+    <div class="label">Scenarioer</div>
+    <div class="scen-row" id="scenarios"></div>
+  </section>
+
+  <div class="explain" id="explain" aria-live="polite"><strong id="exT">Klar</strong><span id="exB"></span></div>
+
+  <main class="grid">
+    <section class="col">
+      <div class="card">
+        <div class="card-head">
+          <h2>Anlegget, natt</h2>
+          <div class="legend"><span><i class="lg-lte"></i>Mobilnett</span><span><i class="lg-lora"></i>LoRa mellom maskiner</span><span><i class="lg-bad"></i>Blokkert</span><span><i class="lg-cam"></i>Kamerasynsfelt</span></div>
+        </div>
+        <svg id="map" viewBox="0 0 600 420" role="img" aria-label="Kart over anlegget med tre maskiner, mobilmast og satellitt">
+          <g id="static"></g><g id="jamL"></g><g id="dyn"></g><g id="dragL"></g>
+        </svg>
+        <p class="note">Klikk på en maskin for å velge den. Den stiplede ringen rundt hver maskin er radarsonen (ca. 20 m). De små prikkene med vifte er kameraene og synsfeltet deres (ca. 30 m, 90°).</p>
+      </div>
+      <div class="card" id="unitPanel"></div>
+      <div class="card">
+        <div class="card-head"><h2>Miljø for alle maskiner</h2><div class="seg" role="group" aria-label="Miljø" id="envSeg"><button type="button" data-env="skog">Skog</button><button type="button" data-env="landlig">Landlig</button><button type="button" data-env="by">By</button></div></div>
+        <p class="note" id="envNote"></p>
+        <div class="btns"><button type="button" class="btn" data-envev="truck">Lastebil passerer</button><button type="button" class="btn" data-envev="wind">Kraftig vind</button></div>
+        <p class="note" id="envStat"></p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Brakke og verktøycontainer</h2><span class="sub">Samme alarmenhet, med dørkontakt og vibrasjon på lås</span></div>
+        <div id="hutPanel"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Jammer</h2><span class="sub">Dra den røde sirkelen på kartet</span></div>
+        <div class="jam-row">
+          <button type="button" class="btn danger" id="jamToggle">Slå på jammer</button>
+          <label><input type="radio" name="jt" id="jtLte" value="lte" checked> Mobil og GPS</label>
+          <label><input type="radio" name="jt" id="jtBred" value="bred"> Bredbånd (også LoRa)</label>
+          <label for="jamR">Rekkevidde <input type="range" id="jamR" min="60" max="160" value="100"></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="cellOff"> Ingen mobildekning på stedet (bare satellitt og LoRa)</label>
+        <p class="note">En mobil- og GPS-jammer stopper LTE, satellitt og GNSS, men ikke LoRa på 868 MHz. En bredbåndsjammer stopper alt innenfor sirkelen, også Bluetooth til utstyrsbrikkene. Den svake ytre ringen viser hvor naboene merker økt støy.</p>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="card">
+        <div class="card-head"><h2>Mottakssentral</h2><span class="sub">Ser bare det som faktisk kommer fram</span></div>
+        <div class="alarms" id="alarms"></div>
+        <div class="urows" id="units"></div>
+        <div class="imgs-h" id="imgsH" hidden>Bilder fra kameraene</div>
+        <div class="imgs" id="imgs"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Utstyr med brikke</h2><div class="seg" role="group" aria-label="Regler" id="modeSeg"><button type="button" data-mode="natt" class="on">Natt</button><button type="button" data-mode="dag">Arbeidstid</button></div></div>
+        <p class="note">Skuffer, hengere og annet utstyr uten strøm har en liten brikke som maskinene og brakka hører over Bluetooth. Dra en brikke på kartet for å flytte utstyret.</p>
+        <div id="tagrows"></div>
+      </div>
+      <div class="card logcard">
+        <div class="card-head"><h2>Hendelseslogg</h2><label><input type="checkbox" id="showHB"> Vis heartbeat</label></div>
+        <ol id="log"></ol>
+      </div>
+    </section>
+  </main>
+  <p class="foot">Simuleringen er forenklet for demonstrasjon. Intervaller, rekkevidder og terskler er eksempelverdier fra konseptet: heartbeat hvert ca. 2. minutt i vakt, hvert 30. sekund i beredskap, alarm når to heartbeats mangler eller når én mangler og det finnes tegn på jamming. Kameraene tar bare bilder når maskinen er armert. Utstyrsbrikkene sender hvert 10. sekund i ro og hvert 2. sekund når de flyttes, og regnes som savnet etter 150 sekunder uten kontakt.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const START=2*3600+14*60, R=40;
+const tower={x:556,y:44}, sat={x:56,y:40};
+const units=[{id:'A',name:'Gravemaskin',x:190,y:240},{id:'B',name:'Hjullaster',x:350,y:150},{id:'C',name:'Traktor',x:452,y:300}];
+let t=0,speed=5,paused=false,selected='A',showHB=false,flashes=[],script=null,activeScen=null,lastAlarmKey=null;
+let thief,elk,jammer,central,images=[],lastImgKey=null;
+const CR=60, TR=140, RC=24;
+let env='skog', walkers=[], nextWalker=0, envStats={seen:0};
+const ENVNAME={skog:'Skog',landlig:'Landlig',by:'By'};
+function syncEnvUI(){const mixed=new Set(units.map(u=>u.env)).size>1;document.querySelectorAll('#envSeg button').forEach(b=>b.classList.toggle('on',!mixed&&b.dataset.env===units[0].env));$('#envNote').textContent=mixed?'Maskinene har ulike profiler: '+units.map(u=>`${u.id} ${ENVNAME[u.env].toLowerCase()}`).join(', ')+'. Profilen settes per maskin i panelet under kartet.':ENVNOTE[units[0].env];}
+const ENVNOTE={skog:'Skog og avsides: person i ytre sone gir forvarsel med bilde. Alarm når radar og kamera bekrefter, personen er på maskinen i over 10 sekunder, eller ved fysiske tegn.',landlig:'Landlig og industri: ytre sone gir logg og forvarsel. Alarm krever person helt inntil maskinen og ett fysisk tegn (vibrasjon, lyd, CAN), eller entydig sabotasje.',by:'By og travelt: ytre sone logges bare, og fortau er maskert i kameraet. Alarm krever person helt inntil maskinen og to fysiske tegn, eller entydig sabotasje.'};
+let siteMode='natt', cellOff=false, tags=[], tagC={}, startClock=START, H=0;
+const SITEGW={id:'G',name:'Brakke',x:490,y:122};
+const HUTDEF=[{id:'G',name:'Brakke',x:490,y:122},{id:'K',name:'Verktøycontainer',x:160,y:330}];
+let huts=[];
+const FENCE={x0:112,y0:98,x1:532,y1:360};
+const inFence=p=>p.x>=FENCE.x0&&p.x<=FENCE.x1&&p.y>=FENCE.y0&&p.y<=FENCE.y1;
+const TAGDEF=[{id:'7F3A-02C1',name:'Graveskuff 1,2 m',short:'Skuff',x:236,y:300},{id:'7F3A-02D8',name:'Planeringsskuff',short:'Plan.skuff',x:300,y:268},{id:'7F3A-0311',name:'Tilhenger 3,5 t',short:'Henger',x:505,y:210},{id:'7F3A-0342',name:'Pallegafler',short:'Gafler',x:375,y:350},{id:'7F3A-0377',name:'Hurtigkobling',short:'Kobling',x:160,y:160},{id:'7F3A-0420',name:'Laserinstrument',short:'Laser',x:176,y:322}];
+const CAMS={A:[{id:'A1',name:'Kabin',ox:-16,oy:-6,ang:180},{id:'A2',name:'GPS-mast',ox:16,oy:-8,ang:-10}],B:[{id:'B1',name:'Kabin',ox:0,oy:12,ang:100}],C:[{id:'C1',name:'Kabin',ox:-14,oy:6,ang:200}]};
+const camStateName={ok:'ok',tape:'tildekket',spray:'tilsløret',blind:'blendet',turned:'flyttet',cut:'kabel brutt'};
+
+const fmt=s=>{s=Math.floor(startClock+s)%86400;return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');};
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const U=id=>units.find(u=>u.id===id);
+const others=u=>units.filter(v=>v!==u);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ago=s=>s<60?`${Math.round(s)} s`:`${Math.floor(s/60)} min ${String(Math.round(s%60)).padStart(2,'0')} s`;
+
+const inJam=u=>jammer.on&&dist(u,jammer)<=jammer.r;
+const lteOk=u=>!inJam(u)&&!cellOff;
+const satOk=u=>!inJam(u);
+const loraOk=u=>!(inJam(u)&&jammer.type==='bred');
+const noisy=u=>jammer.on&&dist(u,jammer)<=jammer.r*2.2;
+const hbInterval=u=>!u.armed?900:(u.mode==='ro'?120:30);
+
+function log(who,lv,text){
+  const li=document.createElement('li'); li.className='lv-'+lv;
+  const wc=who==='Sentral'?'w-c':(who.length<=2?'w-u':'w-x');
+  li.innerHTML=`<time>${fmt(t)}</time><span class="who ${wc}">${who}</span><span class="txt"></span>`;
+  li.querySelector('.txt').textContent=text;
+  const ol=$('#log'); ol.prepend(li); while(ol.children.length>250) ol.lastChild.remove();
+}
+function explain(title,body){$('#exT').textContent=title;$('#exB').textContent=body;const e=$('#explain');e.classList.remove('pulse');void e.offsetWidth;e.classList.add('pulse');}
+
+function resetAll(){
+  t=0;flashes=[];script=null;activeScen=null;walkers=[];nextWalker=0;envStats={seen:0};lastAlarmKey=null;images=[];lastImgKey=null;siteMode='natt';cellOff=false;startClock=START;
+  tags=TAGDEF.map(d=>({...d,px:d.x,py:d.y,lastMoveT:-99,moving:false,heardBy:null,heardT:0,events:[],follow:null,tx:null,ty:null,battery:Math.round(rnd(91,99)),noCt:false,bufLogged:false,nextAdv:rnd(0,10)}));
+  huts=HUTDEF.map(d=>({...d,armed:true,door:false,siren:false,lat:false,acked:false,msg:'',reasons:[]}));
+  tagC={};tags.forEach(g=>tagC[g.id]={seen:0,via:'',ch:'',moving:false,offsite:false,checkout:false,status:'På plass',lv:'ok',latched:false,acked:false,msg:''});
+  thief={x:40,y:395,tx:null,ty:null}; elk={x:575,y:345,tx:null,ty:null};
+  jammer={on:false,type:'lte',x:150,y:330,r:100};
+  central={};
+  units.forEach(u=>{
+    Object.assign(u,{armed:true,engine:false,power:true,battery:100,tamper:{lid:false,mesh:false,ant:false,loop:false},mode:'ro',modeSince:0,personIn:false,personSince:0,elkIn:false,siren:false,nextHB:rnd(10,90),nextBeacon:rnd(0,30),heard:{},reported:{},queue:[],isolated:false,jamOn:false,lastReason:'',cams:CAMS[u.id].map(c=>({...c,state:'ok',seenP:false,seenE:false,conf:0})),selCam:CAMS[u.id][0].id,pendingImg:null,lastSeenCam:null,env:env,personCore:false,coreSince:0,signs:[],imgAsked:false,can:{fuel:Math.round(rnd(55,80)),ref:0,tap:false,gpsDisp:true,gpsGoneAt:0,fuelAl:false,gpsAl:false}});u.can.ref=u.can.fuel;
+    central[u.id]={lastSeen:0,interval:120,state:'Normal',reason:'',latched:false,neighborMissing:false,noise:false,noiseLogged:false,channel:'LTE-M'};
+  });
+  units.forEach(u=>others(u).forEach(v=>u.heard[v.id]=0));
+  $('#log').innerHTML='';
+  log('Sentral','info','Alle tre enhetene er armert og sender heartbeat omtrent hvert 2. minutt.');
+  explain('Klar','Alle tre maskinene er parkert og armert. Velg et scenario, eller dra personen, elgen eller jammeren rundt på kartet og se hva som skjer. Kameraene står i dvale og våkner når de ser bevegelse.');
+  syncJamUI(); buildUnitPanel(); renderScen(); syncModeUI(); if($('#tagrows')) buildTagRows(); if($('#hutPanel')) buildHutPanel();
+}
+
+/* ---------- kommunikasjon ---------- */
+function route(u){
+  if(lteOk(u)) return {ch:'LTE-M',to:tower};
+  if(satOk(u)) return {ch:'Satellitt',to:sat};
+  if(loraOk(u)){
+    const v=others(u).filter(v=>loraOk(v)&&(lteOk(v)||satOk(v))).sort((a,b)=>dist(u,a)-dist(u,b))[0];
+    if(v) return {ch:'LoRa via '+v.id,relay:v};
+  }
+  return null;
+}
+function send(u,msg){const r=route(u); if(!r){u.queue.push(msg);return false;} deliver(u,msg,r); return true;}
+function flash(a,b,kind){flashes.push({a,b,kind,until:performance.now()+900});}
+function deliver(u,msg,r){
+  if(r.relay){flash(u,r.relay,'lora');flash(r.relay,lteOk(r.relay)?tower:sat,msg.kind);}
+  else flash(u,r.to,msg.kind);
+  receive(u,msg,r.ch);
+}
+function setState(u,state,reason){const c=central[u.id];c.state=state;c.reason=reason||'';}
+function receive(u,msg,ch){
+  const c=central[u.id]; c.lastSeen=t; c.channel=ch;
+  if(msg.interval) c.interval=msg.interval;
+  if(msg.kind==='hb'){
+    c.neighborMissing=false; c.noise=!!msg.noise;
+    if(showHB) log('Sentral','hb',`Heartbeat fra ${u.id} via ${ch}, signatur ok, batteri ${Math.round(u.battery)} %${msg.power?'':', går på batteri'}.`);
+    if(msg.noise&&!c.noiseLogged){c.noiseLogged=true;log('Sentral','warn',`${u.id} melder høyt støynivå på radio. Mulig jammer i nærheten.`);}
+    if(!msg.noise) c.noiseLogged=false;
+  } else if(msg.kind==='alarm'){
+    c.latched=true; setState(u,'Alarm',msg.text);
+    log('Sentral','alarm',`ALARM ${u.id}: ${msg.text} (mottatt via ${ch}).`);
+  } else if(msg.kind==='report'){
+    central[msg.target].neighborMissing=true;
+    log('Sentral','warn',`${u.id} melder at ${msg.target} er borte fra LoRa-nettet${msg.noise?' og at støyen er høy':''} (via ${ch}).`);
+  } else if(msg.kind==='info'){
+    log('Sentral','info',`${u.id}: ${msg.text} (via ${ch}).`);
+  }
+}
+
+/* ---------- enhetene ---------- */
+function wakeNeighbors(u){
+  if(!loraOk(u)){log(u.id,'warn','Kan ikke vekke naboene. LoRa er blokkert.');return;}
+  others(u).filter(loraOk).forEach(v=>flash(u,v,'lora'));
+  const w=others(u).filter(v=>loraOk(v)&&v.armed&&v.mode==='ro');
+  w.forEach(v=>{v.mode='beredskap';v.modeSince=t;v.nextHB=Math.min(v.nextHB,t+5);});
+  if(w.length) log('LoRa','info',`${u.id} vekker ${w.map(v=>v.id).join(' og ')}: beredskap, større radarsone og tettere heartbeat.`);
+}
+function raiseAlarm(u,reason,pre){
+  if(u.mode==='alarm'&&u.lastReason===reason) return;
+  u.mode='alarm';u.modeSince=t;u.lastReason=reason;u.siren=true;
+  log(u.id,'alarm',`ALARM: ${reason}. Sirene og blinklys på.`);
+  wakeNeighbors(u);
+  const r=route(u); const ok=send(u,{kind:'alarm',text:reason});
+  if(!ok) log(u.id,'alarm','Alarmen kunne ikke sendes. Lagret lokalt til forbindelsen er tilbake.');
+  sendImage(u,pre);
+  explain('Alarm på '+u.id, `${reason}. `+(ok?(r.relay?`Mobilnettet er blokkert, så alarmen gikk over LoRa til ${r.relay.id}, som sendte den videre.`:`Alarmen gikk direkte til sentralen via ${r.ch}.`):`Ingen kanal virker akkurat nå. Sirenen går lokalt, og sentralen vil merke at ${u.id} har blitt taus.`));
+}
+const camPos=(u,c)=>({x:u.x+c.ox,y:u.y+c.oy});
+const camAng=c=>c.ang+(c.state==='turned'?130:0);
+function camSees(u,c,o){
+  if(c.state!=='ok'&&c.state!=='turned') return false;
+  const p=camPos(u,c); if(dist(p,o)>CR) return false;
+  const a=Math.atan2(o.y-p.y,o.x-p.x)*180/Math.PI, diff=((a-camAng(c))%360+540)%360-180;
+  return Math.abs(diff)<=45;
+}
+function camStep(u){
+  if(!u.armed) return;
+  u.cams.forEach(c=>{
+    const sp=camSees(u,c,thief), se=camSees(u,c,elk);
+    if(sp&&!c.seenP){
+      c.seenP=true;c.conf=Math.round(rnd(88,97));u.lastSeenCam=c.id;
+      log(c.id,'warn',`Kamera ${c.name}: person gjenkjent i bildet (AI, ${c.conf} %). Bildet er lagret og signert.`);
+      if(u.env==='skog'&&(u.mode==='forvarsel'||u.personIn)) raiseAlarm(u,'Radar og kamera bekrefter person ved maskinen');
+      else if(u.env==='by'){}
+      else if(u.mode!=='alarm'&&!u.personIn){u.mode='forvarsel';u.modeSince=t;wakeNeighbors(u);send(u,{kind:'info',text:`Forvarsel, kamera ${c.id} ser en person`});
+        explain('Kameraet ser en person',`Kamera ${c.id} på ${u.id} har gjenkjent en person før radaren. ${u.id} går i forvarsel og vekker naboene.`);}
+    }
+    if(!sp) c.seenP=false;
+    if(se&&!c.seenE){c.seenE=true;log(c.id,'ok',`Kamera ${c.name}: dyr i bildet. Ignoreres.`);}
+    if(!se) c.seenE=false;
+  });
+}
+function sendImage(u,pre){
+  let img;
+  if(pre) img={cam:pre.cam,person:pre.person,conf:pre.conf,masked:true};
+  else {
+    const c=u.cams.find(c=>c.id===u.lastSeenCam&&c.seenP)||u.cams.find(c=>c.state==='ok');
+    if(!c){log(u.id,'warn','Ingen kamera har fri sikt. Ingen bilder å sende.');return;}
+    img={cam:c.id,person:c.seenP,conf:c.conf,masked:false};
+  }
+  img.unit=u.id;img.t=t;img.key=u.id+img.cam+Math.round(t*10);
+  const r=route(u);
+  if(r&&r.ch==='LTE-M'){deliverImage(u,img);return;}
+  u.pendingImg=img;
+  log(u.id,'info',!r?'Bildet er lagret lokalt og sendes når forbindelsen er tilbake.':(r.relay?'LoRa har for lite båndbredde til bilder. Bildet er lagret og sendes når mobilnettet er tilbake.':'Satellitt sender bare tekst. Bildet sendes når mobilnettet er tilbake.'));
+}
+function deliverImage(u,img){
+  images.unshift(img);images=images.slice(0,4);flash(u,tower,'alarm');
+  log('Sentral','info',`Bilde mottatt fra kamera ${img.cam} (320×240, ca. 18 kB, signatur ok)${img.masked?', siste bilde før kameraet ble satt ut':''}${img.late?', levert etter bruddet':''}.`);
+}
+function snapSVG(im){
+  let s=`<svg viewBox="0 0 160 120" role="img" aria-label="Kamerabilde fra ${im.cam}"><rect width="160" height="120" fill="#161a17"/><path d="M0 86 L160 74 L160 120 L0 120Z" fill="#262c27"/><rect x="104" y="44" width="46" height="31" fill="#2f3630"/><rect x="112" y="50" width="14" height="13" fill="#3c443d"/><rect x="132" y="38" width="4" height="8" fill="#3c443d"/>`;
+  if(im.person) s+=`<circle cx="62" cy="50" r="6" fill="#cfd6cf"/><path d="M52 93 L54 62 Q62 56 70 62 L72 93 Z" fill="#cfd6cf"/><rect x="45" y="38" width="34" height="59" fill="none" stroke="#f0b03a" stroke-width="1.5"/><text x="45" y="34" fill="#f0b03a" font-size="8" font-family="monospace">PERSON ${im.conf||93}%</text>`;
+  s+=`<text x="5" y="11" fill="#e6e9ed" font-size="8" font-family="monospace">${im.cam}  ${fmt(im.t)}  IR</text><text x="155" y="114" text-anchor="end" fill="#8fd1a8" font-size="7.5" font-family="monospace">SIGNERT</text>`;
+  if(im.masked) s+=`<rect x="1.5" y="1.5" width="157" height="117" fill="none" stroke="#f0675b" stroke-width="3"/>`;
+  return s+'</svg>';
+}
+const gateways=()=>[...units,SITEGW];
+const bleBlocked=p=>jammer.on&&jammer.type==='bred'&&dist(p,jammer)<=jammer.r;
+const gwRoute=w=>{if(w!==SITEGW)return route(w);if(lteOk(w))return {ch:'LTE-M',to:tower};if(bleBlocked(w)&&jammer.type==='bred')return null;const v=units.filter(u=>route(u)&&loraOk(u)).sort((a,b)=>dist(a,w)-dist(b,w))[0];return v?{ch:'LoRa via '+v.id+(lteOk(v)?'':' og satellitt'),relay:v}:null;};
+function hutRoute(h){if(lteOk(h))return {ch:'LTE-M',to:tower};const v=units.filter(u=>route(u)&&loraOk(u)&&!bleBlocked(h)).sort((a,b)=>dist(a,h)-dist(b,h))[0];return v?{ch:'LoRa via '+v.id,relay:v}:null;}
+function hutAlarm(h,reason,title,body){
+  h.siren=true;h.lat=true;h.acked=false;h.msg=reason;
+  log(h.id,'alarm',`ALARM: ${reason}. Sirene og blinklys på.`);
+  const r=hutRoute(h);
+  if(r){if(r.relay){flash(h,r.relay,'lora');flash(r.relay,tower,'alarm');}else flash(h,tower,'alarm');log('Sentral','alarm',`ALARM ${h.name}: ${reason} (mottatt via ${r.ch}).`);}
+  else log(h.id,'alarm','Alarmen kunne ikke sendes. Lagret lokalt.');
+  lastAlarmKey=null;explain(title,body);buildHutPanel();
+}
+function hutAct(k,id){
+  const h=huts.find(x=>x.id===id);
+  switch(k){
+    case 'arm':h.armed=!h.armed;if(!h.armed){h.siren=false;}log(h.id,h.armed?'info':'ok',h.armed?`${h.name} er armert.`:`${h.name} er avarmert med appen (Bluetooth, Face ID).`);buildHutPanel();break;
+    case 'lock':if(!h.armed){log(h.id,'info','Vibrasjon på låsen. Avarmert, logges bare.');break;}hutAlarm(h,'Kraftig vibrasjon fra låsen, noen kutter eller bryter','Innbrudd i '+h.name.toLowerCase(),`Akselerometeret ved låsen kjenner igjen vibrasjonen fra boltekutter og brekkjern. ${h.name} gir alarm før døren er åpen, og sirene og lys starter.`);break;
+    case 'door':h.door=!h.door;if(h.door&&h.armed)hutAlarm(h,'Døren er åpnet uten avarmering (magnetkontakt)','Døren er åpnet',`Magnetkontakten på døren melder at den er åpnet. Radaren inne bekrefter om noen går inn, og kamera ved døren tar bilde.`);else{log(h.id,'info',h.door?'Døren er åpnet.':'Døren er lukket.');buildHutPanel();}break;
+    case 'glass':if(h.armed)hutAlarm(h,'Glassbrudd i vinduet (lydanalyse)','Vindu knust','Mikrofonen kjenner igjen lyden av glass som knuses, og radaren inne bekrefter bevegelse.');break;
+    case 'reset':Object.assign(h,{door:false,siren:false,lat:false,acked:false,msg:''});log(h.id,'ok',`${h.name} er kontrollert og tilbakestilt.`);lastAlarmKey=null;buildHutPanel();break;
+  }
+}
+function buildHutPanel(){
+  $('#hutPanel').innerHTML=huts.map(h=>`<div class="hrow"><div><b>${h.name}</b><div class="sub">${h.armed?'Armert':'Avarmert'} · dør ${h.door?'åpen':'lukket'}${h.siren?' · sirene':''}${h.gw?'':''}</div></div><div class="btns"><button type="button" class="btn" data-hut="arm" data-h="${h.id}">${h.armed?'Avarmer i appen':'Armer'}</button><button type="button" class="btn danger" data-hut="lock" data-h="${h.id}">Kutt låsen</button><button type="button" class="btn danger" data-hut="door" data-h="${h.id}">${h.door?'Lukk døren':'Åpne døren'}</button>${h.id==='G'?`<button type="button" class="btn danger" data-hut="glass" data-h="${h.id}">Knus vinduet</button>`:''}<button type="button" class="btn ghost" data-hut="reset" data-h="${h.id}">Tilbakestill</button></div></div>`).join('')+`<p class="note">Brakka er også gateway for utstyrsbrikkene. Laserinstrumentet ligger i verktøycontaineren med egen brikke.</p>`;
+}
+function stepTag(g){
+  if(g.follow){g.x=g.follow.x+10;g.y=g.follow.y+6;}
+  if(Math.abs(g.x-g.px)>0.2||Math.abs(g.y-g.py)>0.2){g.lastMoveT=t;g.px=g.x;g.py=g.y;}
+  g.moving=t-g.lastMoveT<6;
+  if(g.follow&&!g.lifted){g.lifted=true;g.liftPending=true;}
+  if(t<g.nextAdv) return; g.nextAdv=t+(g.moving?2:10);
+  const hear=bleBlocked(g)?[]:gateways().filter(w=>dist(w,g)<=TR&&!bleBlocked(w)).sort((a,b)=>dist(a,g)-dist(b,g));
+  if(!hear.length){if(g.moving&&!g.noCt){g.noCt=true;g.events.push(t);}g.heardBy=null;return;}
+  const w=hear[0];g.heardBy=w.id;g.heardT=t;g.noCt=false;
+  const r=gwRoute(w),c=tagC[g.id];
+  if(!r){if(!g.bufLogged){g.bufLogged=true;log(w.id,'info',`Hører brikke ${g.id} (${g.name}), men har ingen forbindelse ut. Lagrer observasjonen.`);}return;}
+  g.bufLogged=false;
+  if(g.moving){flash(g,w,'tag');if(r.relay)flash(w,r.relay,'lora');}
+  if(g.liftPending){g.liftPending=false;log('Sentral',siteMode==='natt'?'alarm':'warn',`${g.name} (${g.id}) er løftet ca. ${(1+Math.random()*.6).toFixed(1).replace('.',',')} m (barometer og akselerometer), hørt av ${w.id==='G'?'Brakke':w.id}.`);}
+  c.seen=t;c.via=w.id==='G'?'Brakke':w.id;c.ch=r.ch;c.moving=g.moving;c.offsite=!inFence(g);
+  if(g.events.length){log('Sentral','warn',`Brikke ${g.id} (${g.name}) leverte lagret hendelse: flyttet uten kontakt fra ${fmt(g.events[0])}.`);g.events=[];}
+}
+function evalTags(){
+  tags.forEach(g=>{
+    const c=tagC[g.id],since=t-c.seen,natt=siteMode==='natt';let st,lv,msg='';
+    if(c.checkout){st='Sjekket ut';lv='out';}
+    else if(since>150){st='Savnet';lv=natt?'alarm':'warn';msg=`${g.name} (${g.id}) er ikke hørt på ${ago(since)}. Sist hørt av ${c.via||'ukjent'}${c.offsite?', utenfor anlegget':''}`;}
+    else if(c.offsite){st='Utenfor anlegget';lv=natt?'alarm':'warn';msg=natt?`${g.name} (${g.id}) er utenfor anlegget om natten`:`${g.name} (${g.id}) forlater anlegget uten å være sjekket ut`;}
+    else if(c.moving&&since<15){st='I bevegelse';lv=natt?'alarm':'ok';if(natt)msg=`${g.name} (${g.id}) beveger seg utenfor arbeidstid (hørt av ${c.via} via ${c.ch})`;}
+    else {st='På plass';lv='ok';}
+    if(c.latched&&!c.acked&&st==='På plass') return;
+    if(st===c.status) return;
+    const prev=c.status;c.status=st;c.lv=lv;c.msg=msg;c.acked=false;if(lv==='alarm')c.latched=true;
+    if(msg){log('Sentral',lv==='alarm'?'alarm':'warn',(lv==='alarm'?'ALARM utstyr: ':'Varsel utstyr: ')+msg+'.');
+      if(st==='I bevegelse') explain('Utstyr i bevegelse om natten',`Brikken på ${g.name} har et akselerometer og sender oftere når den flyttes. ${c.via} hørte den og sendte varselet videre via ${c.ch}. Ingen maskin trenger å se tyven.`);
+      else if(st==='Savnet') explain('Utstyr savnet',`Ingen maskin eller gateway har hørt ${g.name} på ${ago(since)}. Sentralen vet hvem som hørte brikken sist, og når. Neste gang en maskin, brakka eller en telefon med appen kommer i nærheten, blir den funnet igjen.`);
+      else if(st==='Utenfor anlegget'&&!natt) explain('Utstyr tatt med uten utsjekk',`${g.name} er på vei ut av anlegget uten å være sjekket ut. Anleggslederen får varsel. Den som tar med utstyret kan sjekke det ut i appen ved å holde telefonen mot brikken (NFC).`);
+    } else if(st==='På plass'&&prev!=='På plass') log('Sentral','ok',`${g.name} er hørt igjen og er på plass.`);
+  });
+}
+function buildTagRows(){
+  $('#tagrows').innerHTML=tags.map(g=>`<div class="trow" id="tr-${g.id}"><div class="t-name">${g.name}<span class="t-id">${g.id}</span></div><span class="pill" data-f="pill"></span><button type="button" class="btn sm" data-chk="${g.id}"></button><div class="t-meta" data-f="meta"></div></div>`).join('');
+}
+function updTags(){
+  tags.forEach(g=>{const c=tagC[g.id],r=$('#tr-'+g.id);if(!r)return;const p=r.querySelector('[data-f=pill]');
+    p.textContent=c.status;p.className='pill p-'+c.lv;
+    r.querySelector('[data-chk]').textContent=c.checkout?'Sjekk inn':'Sjekk ut';
+    r.querySelector('[data-f=meta]').textContent=`Sist hørt for ${ago(t-c.seen)} siden${c.via?' av '+c.via:''}${c.ch?' · '+c.ch:''} · batteri ${g.battery} %`+(g.events.length?' · har lagret hendelse':'');});
+}
+function syncModeUI(){document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.mode===siteMode));const c=$('#cellOff');if(c)c.checked=cellOff;}
+function stepUnit(u){
+  if(!u.power) u.battery=Math.max(0,u.battery-0.0004*speed);
+  const j=inJam(u);
+  if(j&&!u.jamOn){u.jamOn=true;
+    log(u.id,'warn','Mister mobilnett samtidig som støyen stiger og GPS melder jamming. Tolker det som jamming.');
+    if(jammer.type==='lte') explain('Jamming oppdaget',`${u.id} mister mobilnett, GPS og satellitt på en gang, og støygulvet stiger. LoRa på 868 MHz går fortsatt gjennom, så ${u.id} sender heartbeat og alarmer via en nabo.`);
+  }
+  if(!j&&u.jamOn){u.jamOn=false;log(u.id,'ok','Jammingen er borte. Vanlig forbindelse er tilbake.');}
+  if(t>=u.nextBeacon){u.nextBeacon=t+30; if(loraOk(u)) others(u).forEach(v=>{if(loraOk(v)) v.heard[u.id]=t;});}
+  if(loraOk(u)) others(u).forEach(v=>{
+    const gap=t-u.heard[v.id];
+    if(gap>75&&!u.reported[v.id]){
+      u.reported[v.id]=true;
+      log(u.id,'warn',`Hører ikke ${v.id} på LoRa lenger${noisy(u)?', og støynivået er høyt':''}. Melder fra til sentralen.`);
+      send(u,{kind:'report',target:v.id,noise:noisy(u)});
+      explain('Naboene merker at en maskin er taus',`${u.id} har ikke hørt LoRa-signal fra ${v.id} på over ${Math.round(gap)} sekunder. ${u.id} står utenfor jammerens rekkevidde og melder fra på vegne av ${v.id}.`);
+    }
+    if(gap<40&&u.reported[v.id]) u.reported[v.id]=false;
+  });
+  const r=route(u);
+  if(r&&u.queue.length){
+    const q=u.queue.splice(0);
+    log(u.id,'info',`Forbindelsen er tilbake. Sender ${q.length} lagrede meldinger.`);
+    q.filter(m=>m.kind!=='hb').forEach(m=>deliver(u,{...m,text:(m.text||'')+' (lagret lokalt, levert etter bruddet)'},r));
+  }
+  if(!r&&!u.isolated){
+    u.isolated=true;
+    log(u.id,'alarm','Ingen kanal virker: LTE, satellitt og LoRa er blokkert. Lagrer alt lokalt.');
+    if(u.armed){u.siren=true;log(u.id,'alarm','Starter sirene og blinklys lokalt.');}
+    explain('Enheten er isolert',`${u.id} står inne i jammerens rekkevidde og når verken mobilnett, satellitt eller naboer. Den lagrer alt lokalt og starter sirenen. Nå er det sentralens jobb å merke at ${u.id} har blitt taus.`);
+  }
+  if(r) u.isolated=false;
+  if(t>=u.nextHB){const iv=hbInterval(u);u.nextHB=t+iv*rnd(.8,1.2);send(u,{kind:'hb',interval:iv,noise:noisy(u),power:u.power});}
+  if(u.pendingImg&&lteOk(u)){const im=u.pendingImg;u.pendingImg=null;deliverImage(u,{...im,late:true});}
+  const rr=R*(u.mode==='beredskap'?1.3:1);
+  const pin=dist(thief,u)<=rr;
+  if(pin&&!u.personIn){
+    u.personIn=true;u.personSince=t;
+    if(u.armed&&u.env==='by'){log(u.id,'info','Radar: person i ytre sone. By-profil, logges bare.');}
+    else if(u.armed){
+      if(u.mode!=='alarm'){u.mode='forvarsel';u.modeSince=t;}
+      log(u.id,'warn',u.env==='skog'?'Radar: menneske i ytre sone. Forvarsel med bilde til appen.':'Radar: menneske i ytre sone. Forvarsel, venter på tegn ved maskinen.');
+      wakeNeighbors(u);
+      u.nextHB=Math.min(u.nextHB,t+2);
+      send(u,{kind:'info',text:'Forvarsel, person i ytre sone'});
+      explain('Forvarsel på '+u.id,u.env==='skog'?`Radaren ser et menneske langt fra folk. ${u.id} vekker naboene og sender forvarsel med bilde. Alarm utløses når kamera bekrefter, personen er på maskinen i over 10 sekunder, eller noe fysisk skjer.`:`Radaren ser et menneske nær ${u.id}. I landlig profil kreves det at personen er helt inntil maskinen og at det kommer et fysisk tegn, som vibrasjon eller lyd, før alarm.`);
+    } else log(u.id,'info','Radar: person ved maskinen. Enheten er avarmert, så dette logges bare.');
+  }
+  if(!pin&&u.personIn){u.personIn=false;log(u.id,'info','Radar: personen har forlatt sonen.');}
+  const pcore=dist(thief,u)<=RC;
+  if(pcore&&!u.personCore){u.personCore=true;u.coreSince=t;if(u.armed)log(u.id,'warn',u.env==='by'?'Person helt inntil maskinen. Venter på fysiske tegn (to kreves i by).':'Person helt inntil maskinen.');}
+  if(!pcore&&u.personCore){u.personCore=false;u.imgAsked=false;if(u.armed&&u.mode!=='alarm')log(u.id,'info','Personen har gått fra maskinen.');}
+  camStep(u);
+  if(u.can.tap) u.can.fuel=Math.max(0,u.can.fuel-0.12*H);
+  if(u.engine) u.can.ref=u.can.fuel;
+  const drop=u.can.ref-u.can.fuel;
+  if(!u.engine&&drop>3&&!u.can.fuelAl){u.can.fuelAl=true;raiseAlarm(u,`Drivstofftyveri: nivået har falt ${drop.toFixed(0)} % med motoren av (CAN, SPN 96)`);
+    explain('Drivstofftyveri oppdaget',`Enheten leser drivstoffnivået fra maskinens CAN-buss. Faller nivået mens motoren står, blir det trolig tappet. ${u.id} varsler mens tyven fortsatt holder på.`);}
+  if(!u.can.gpsDisp&&!u.can.gpsAl&&t-u.can.gpsGoneAt>2){u.can.gpsAl=true;raiseAlarm(u,'GPS-skjermen har forsvunnet fra CAN-bussen (serienr. 4471-2209)');
+    explain('GPS-utstyr koblet fra','Maskinstyringssystemet sender meldinger på CAN-bussen flere ganger i sekundet. Når skjermen kobles fra, stopper meldingene etter et par sekunder. Enheten kjenner også serienummeret, så en byttet skjerm blir oppdaget.');}
+  if(u.armed&&u.mode!=='alarm'){
+    const camP=u.cams.some(c=>c.seenP);
+    if(u.env==='skog'){if(u.personIn&&camP)raiseAlarm(u,'Radar og kamera bekrefter person ved maskinen');else if(u.personCore&&t-u.coreSince>=10)raiseAlarm(u,'Person på maskinen i over 10 sekunder (radar)');}
+    else if(u.env==='landlig'&&u.personCore&&camP&&!u.imgAsked){u.imgAsked=true;log(u.id,'warn','Kamera ser person helt inntil maskinen. Bilde sendt til anleggsleder for vurdering, ingen sirene.');}
+  }
+  const ein=dist(elk,u)<=rr;
+  if(ein&&!u.elkIn){u.elkIn=true;log(u.id,'ok','Radar: bevegelse klassifisert som dyr ut fra høyde, gange og fart. Ingen alarm.');
+    explain('Dyr gir ikke alarm',`Radaren på ${u.id} skiller en elg fra et menneske ut fra høyde, bevegelsesmønster og fart. Hendelsen logges, men ingen blir vekket.`);}
+  if(!ein&&u.elkIn) u.elkIn=false;
+  if((u.mode==='forvarsel'||u.mode==='beredskap')&&!u.personIn&&t-u.modeSince>150){u.mode='ro';log(u.id,'info','Ingen ny aktivitet. Tilbake til vanlig vakt.');}
+}
+
+/* ---------- mottakssentral ---------- */
+function evalCentral(){
+  units.forEach(u=>{
+    const c=central[u.id]; if(c.latched) return;
+    const since=t-c.lastSeen, m=since/(c.interval*1.1+10);
+    if(m<1){if(c.state!=='Normal'){setState(u,'Normal','');log('Sentral','ok',`${u.id} er hørt igjen. Tilbake til normal.`);} return;}
+    const ind=c.neighborMissing||c.noise;
+    if(m>=2||(ind&&m>=1.2)){
+      c.latched=true;
+      const reason=`Ingen heartbeat på ${ago(since)}`+(c.neighborMissing?', og naboene melder at enheten er borte':'')+(c.noise&&!c.neighborMissing?', og enheten meldte støy før den ble taus':'');
+      setState(u,'Alarm',reason);
+      log('Sentral','alarm',`ALARM ${u.id}: ${reason}. Sentralen kjenner siste posisjon og tidspunkt.`);
+      explain('Stillhet utløser alarm',`Sentralen har ikke hørt fra ${u.id} på ${ago(since)}. Å tause enheten er i seg selv en alarm, og sentralen vet hvor og når den sist var i kontakt.`);
+      return;
+    }
+    const st=ind?'Mistenkelig':'Forsinket';
+    if(c.state!==st){setState(u,st,ind?'Heartbeat mangler, og det er tegn til jamming':'Én heartbeat mangler');log('Sentral','warn',`${u.id}: ${st.toLowerCase()}. ${c.reason}.`);}
+  });
+}
+function ack(id){
+  const c=central[id],u=U(id);
+  c.latched=false;setState(u,'Normal','');
+  const reach=!!route(u);
+  if(reach){u.siren=false;if(u.mode==='alarm')u.mode='ro';u.lastReason='';}
+  log('Sentral','ok',`Operatør kvitterte alarmen for ${id} og sendte vekter.${reach?' Sirenen er slått av på avstand.':' Sirenen kan ikke slås av før enheten er nåbar.'}`);
+  lastAlarmKey=null;
+}
+
+/* ---------- handlinger ---------- */
+function physSign(u,name){
+  u.signs=u.signs.filter(x=>t-x.t<60);u.signs.push({t,name});
+  const need=u.env==='by'?2:1,n=u.signs.length,present=u.env==='by'?u.personCore:(u.personIn||u.personCore);
+  if(present&&n>=need){raiseAlarm(u,`Person ved maskinen og ${n===1?'ett fysisk tegn':n+' fysiske tegn'}: ${u.signs.map(x=>x.name.toLowerCase()).join(' og ')}`);}
+  else{if(u.mode==='ro'){u.mode='beredskap';u.modeSince=t;}log(u.id,'warn',`${name}. ${Math.min(n,need)} av ${need} fysiske tegn${present?'':', ingen person ved maskinen'}. Logges, og følsomheten økes.`);}
+}
+function act(k,id){
+  const u=U(id), cam=u.cams.find(c=>c.id===u.selCam);
+  const mask=(st,reason,title,body)=>{const pre={cam:cam.id,person:cam.seenP,conf:cam.conf};cam.state=st;cam.seenP=false;raiseAlarm(u,reason,pre);explain(title,body);};
+  switch(k){
+    case 'arm':
+      if(u.armed){u.armed=false;u.mode='ro';u.siren=false;log(u.id,'ok','Førerkort lest (NFC, signert). Enheten er avarmert.');send(u,{kind:'info',text:'Avarmert med gyldig førerkort'});
+        explain('Avarmering','Føreren holder kortet mot leseren. Kortet er kryptografisk signert, så enheten vet at det er riktig person. Nå logges sensorene bare.');}
+      else {u.armed=true;log(u.id,'info','Enheten er armert.');send(u,{kind:'info',text:'Armert'});}
+      u.nextHB=t+3;break;
+    case 'engine':
+      if(u.armed) raiseAlarm(u,'Motoren startet uten gyldig førerkort (motorturtall på CAN)');
+      else {u.engine=!u.engine;log(u.id,'info',u.engine?'Motoren startet av innlogget fører.':'Motoren er stoppet.');}
+      break;
+    case 'vib':
+      if(!u.armed){log(u.id,'info','IMU: vibrasjon fra vanlig arbeid. Enheten er avarmert, så dette logges bare.');break;}
+      physSign(u,'Vibrasjon fra verktøy');
+      break;
+    case 'glass':
+      if(u.armed&&u.env!=='by') raiseAlarm(u,'Glassbrudd i kabinen (lydanalyse)'); else if(u.armed) physSign(u,'Glassbrudd i kabinen'); else log(u.id,'info','Mikrofon: glasslyd registrert. Enheten er avarmert, så dette logges bare.');
+      break;
+    case 'lid': u.tamper.lid=true;raiseAlarm(u,'Lokket er åpnet (lyssensor og lokkbryter)');break;
+    case 'mesh': u.tamper.mesh=true;raiseAlarm(u,'Brudd i tamperfolien, noen borer i kapslingen');break;
+    case 'ant': u.tamper.ant=true;raiseAlarm(u,'Antennekabelen er kuttet. Enheten bytter til intern antenne');break;
+    case 'loop': u.tamper.loop=true;raiseAlarm(u,'Kabelsløyfen rundt GPS-utstyret er brutt');break;
+    case 'power': u.power=false;raiseAlarm(u,'Strømmen er kuttet. Enheten går videre på reservebatteri');break;
+    case 'tape': mask('tape',`Kamera ${cam.id} er tildekket: IR-refleksjon ved linsen økte og bildet ble mørkt`,'Anti-masking: tildekket linse',`En liten IR-diode ved linsen lyser ut og en sensor måler hvor mye som kommer tilbake. Teip, en hånd eller en pose rett foran linsen gir mye sterkere refleksjon. Samtidig blir bildet mørkt og ensartet. ${cam.id} sender siste bilde før tildekkingen.`);break;
+    case 'spray': mask('spray',`Kamera ${cam.id} er tilsløret: skarpheten i bildet falt brått`,'Anti-masking: spray på linsen',`Kameraet måler skarphet og kontrast i hvert bilde. Spray eller fett gir et brått fall. Et langsomt fall over dager tolkes som skitt og gir en servicemelding, ikke alarm.`);break;
+    case 'blind': mask('blind',`Kamera ${cam.id} er blendet: bildet er overeksponert og lyssensoren viser sterkt lys`,'Anti-masking: blending',`Sterk lommelykt eller laser gir et nesten hvitt bilde og høy verdi på lyssensoren ved linsen. Det er ikke normalt om natten, så det gir alarm.`);break;
+    case 'turn': mask('turned',`Kamera ${cam.id} er flyttet: akselerometer og avvik fra referansebildet`,'Anti-masking: kameraet er vridd',`Kameraet har et akselerometer og sammenligner bildet med et lagret referansebilde. Vris eller løsnes kameraet, endrer begge seg.`);break;
+    case 'cutcam': mask('cut',`Kamerakabel ${cam.id} er brutt: strøm og heartbeat fra kameraet er borte`,'Kamerakabel kuttet',`Kamerahubben gir strøm til hvert kamera gjennom en elektronisk sikring som måler strømmen, og kameraet sender heartbeat hvert sekund. Kuttes eller kortsluttes kabelen, merker hubben det med en gang.`);break;
+    case 'fuel': u.can.tap=!u.can.tap;log('Hendelse','info',u.can.tap?`Noen tapper drivstoff fra tanken på ${u.id}.`:`Tappingen på ${u.id} har stoppet.`);break;
+    case 'gpsdisp': u.can.gpsDisp=false;u.can.gpsGoneAt=t;log('Hendelse','info',`GPS-skjermen i kabinen på ${u.id} kobles fra.`);break;
+    case 'camfix': cam.state='ok';log(cam.id,'ok',`Kamera ${cam.id} er rengjort og kontrollert. Nytt referansebilde lagret.`);break;
+    case 'restore':
+      u.cams.forEach(c=>c.state='ok');Object.assign(u.can,{tap:false,gpsDisp:true,fuelAl:false,gpsAl:false,ref:u.can.fuel});
+      Object.assign(u.tamper,{lid:false,mesh:false,ant:false,loop:false});u.power=true;u.siren=false;u.mode='ro';u.lastReason='';
+      log(u.id,'ok','Enheten er kontrollert og tilbakestilt.');break;
+  }
+  buildUnitPanel();
+}
+
+/* ---------- scenarioer ---------- */
+const go=(o,x,y)=>{o.tx=x;o.ty=y;};
+function setJam(on,type,x,y,r){Object.assign(jammer,{on,type,x,y,r});syncJamUI();if(on) log('Jammer','alarm',`Jammer slått på (${type==='lte'?'mobil og GPS':'bredbånd'}).`);}
+function jamOff(){jammer.on=false;syncJamUI();go(thief,40,395);log('Jammer','ok','Jammer slått av. Tyven forlater stedet.');explain('Jammeren er borte','Når jammeren slås av, sender A alt den har lagret lokalt, også bildet fra kameraet.');}
+const T=id=>tags.find(g=>g.id===id);
+const SCEN=[
+  {id:'blandet',name:'Ulike miljøer per maskin',d:'A i by, B landlig, C i skog',sel:'A',steps:[
+    {at:0,f:()=>{U('A').env='by';U('B').env='landlig';U('C').env='skog';syncEnvUI();buildUnitPanel();log('Sentral','info','Miljøprofil satt per maskin: A by, B landlig, C skog.');}},
+    {at:1,f:()=>explain('Scenario: samme eier, ulike miljøer','Gravemaskin A står ved et fortau i byen, hjullaster B på et industriområde og traktor C i skogen. En person går først til A, så til C. Samme oppførsel gir ulike reaksjoner.')},
+    {at:3,f:()=>go(thief,205,252)},
+    {at:95,f:()=>go(thief,470,322)},
+    {at:200,f:()=>go(thief,600,330)}]},
+  {id:'lordag',name:'Lørdagskveld i byen',d:'Mange går forbi, ingen falske alarmer',sel:'A',env:'by',steps:[
+    {at:1,f:()=>explain('Scenario: lørdagskveld i Oslo sentrum','Maskinene står langs veien. Mange går forbi, og en person lener seg mot gravemaskin A en stund. Ingen av delene gir alarm.')},
+    {at:4,f:()=>go(thief,205,252)},
+    {at:110,f:()=>{log('Hendelse','info','Personen har lent seg mot maskinen en stund og går videre.');go(thief,330,350);}},
+    {at:170,f:()=>{explain('Ekte innbrudd i byen','Senere kommer en tyv, klatrer opp på maskinen, jobber med verktøy og kutter kabelen til GPS-utstyret.');go(thief,200,250);}},
+    {at:240,f:()=>act('vib','A')},
+    {at:252,f:()=>act('loop','A')}]},
+  {id:'trafikk',name:'Lastebil og vind',d:'Felles signaler gir ikke alarm',sel:'B',env:'landlig',steps:[
+    {at:3,f:()=>envEvent('truck')},
+    {at:40,f:()=>envEvent('wind')}]},
+  {id:'tyv',name:'Tyv mot gravemaskin',d:'Radar og kamera bekrefter, bilde sendes',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: tyv mot A','En person går fra veien mot gravemaskin A for å stjele GPS-mottakeren. Følg med på radarsonen, kameraet, naboene og sentralen.');go(thief,156,230);}},
+    {at:95,f:()=>act('loop','A')}]},
+  {id:'maske',name:'Tyv dekker til kameraet',d:'Anti-masking',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: tyv dekker til kameraet','Tyven sniker seg inn utenfor kameraenes synsfelt og teiper over linsen før han går løs på GPS-utstyret.');go(thief,196,268);}},
+    {at:75,f:()=>{U('A').selCam='A1';act('tape','A');}},
+    {at:95,f:()=>act('loop','A')}]},
+  {id:'jamlte',name:'Mobiljammer og tyv',d:'Alarmen går via LoRa til en nabo',sel:'A',steps:[
+    {at:1,f:()=>{setJam(true,'lte',160,285,85);explain('Scenario: mobil- og GPS-jammer','Tyven slår på en jammer som stopper mobilnett, GPS og satellitt rundt A. LoRa på 868 MHz går fortsatt gjennom.');}},
+    {at:20,f:()=>go(thief,156,230)},
+    {at:110,f:()=>act('loop','A')},
+    {at:150,f:jamOff}]},
+  {id:'jambred',name:'Bredbåndsjammer',d:'A blir taus, naboene og sentralen reagerer',sel:'A',steps:[
+    {at:1,f:()=>{setJam(true,'bred',178,268,100);explain('Scenario: bredbåndsjammer','Nå stopper jammeren alt rundt A, også LoRa. A kan ikke si fra selv. Se hvordan B og sentralen oppdager det.');}},
+    {at:25,f:()=>go(thief,156,230)},
+    {at:120,f:()=>act('loop','A')},
+    {at:170,f:jamOff}]},
+  {id:'skuff',name:'Skuff stjeles om natten',d:'Utstyrsbrikke i bevegelse',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: skuff stjeles','En tyv går til graveskuffen, som ligger utenfor radar- og kamerasonene, og drar den med seg ut av anlegget.');go(thief,236,300);}},
+    {at:75,f:()=>{T('7F3A-02C1').follow=thief;go(thief,25,410);}}]},
+  {id:'container',name:'Innbrudd i verktøycontainer',d:'Lås, dør og løftet utstyr',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: innbrudd i verktøycontaineren','En tyv går til verktøycontaineren, kutter hengelåsen, åpner døren og tar med seg laserinstrumentet.');go(thief,182,348);}},
+    {at:65,f:()=>hutAct('lock','K')},
+    {at:78,f:()=>hutAct('door','K')},
+    {at:92,f:()=>{T('7F3A-0420').follow=thief;go(thief,20,410);}}]},
+  {id:'feil',name:'Feil utstyr tas med',d:'Utsjekk på dagtid',sel:'C',env:'landlig',steps:[
+    {at:0,f:()=>{startClock=14*3600+5*60;siteMode='dag';syncModeUI();units.forEach(u=>{u.armed=false;});buildUnitPanel();log('Sentral','info','Arbeidstid: maskinene er avarmert, og reglene for utstyr er satt til arbeidstid.');}},
+    {at:2,f:()=>{explain('Scenario: feil utstyr tas med','Pallegaflene lastes på en bil som skal til et annet prosjekt. Ingen har sjekket dem ut.');go(T('7F3A-0342'),590,255);}}]},
+  {id:'dekning',name:'Ingen mobildekning',d:'Varsel via satellitt',sel:'A',steps:[
+    {at:1,f:()=>{cellOff=true;syncModeUI();explain('Scenario: ingen mobildekning','Anlegget ligger der det ikke er mobildekning. Maskinene bruker satellitt og LoRa. En tyv tar planeringsskuffen.');go(thief,300,268);}},
+    {at:85,f:()=>{T('7F3A-02D8').follow=thief;go(thief,60,60);}}]},
+  {id:'diesel',name:'Drivstofftyveri',d:'Oppdaget på CAN-bussen',sel:'C',steps:[
+    {at:1,f:()=>{explain('Scenario: drivstofftyveri','En tyv tapper diesel fra traktor C med en slange, og holder seg utenfor radarsonen.');go(thief,500,330);}},
+    {at:40,f:()=>act('fuel','C')},
+    {at:120,f:()=>{act('fuel','C');go(thief,600,330);}}]},
+  {id:'gpsskjerm',name:'GPS-skjerm demonteres',d:'Borte fra CAN-bussen',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: GPS-skjermen demonteres','Tyven går rett til kabinen på A og kobler fra GPS-skjermen.');go(thief,215,250);}},
+    {at:80,f:()=>act('gpsdisp','A')}]},
+  {id:'elg',name:'Elg på anlegget',d:'Dyr gir ikke alarm',sel:'C',steps:[
+    {at:1,f:()=>{explain('Scenario: elg','En elg går gjennom anlegget og passerer både C og B.');go(elk,400,240);}},
+    {at:55,f:()=>go(elk,250,60)}]},
+  {id:'strom',name:'Strømkutt og lokk',d:'Sabotasje på selve enheten',sel:'C',steps:[
+    {at:2,f:()=>{explain('Scenario: sabotasje på C','Tyven kutter strømmen til enheten på traktor C og prøver deretter å åpne lokket.');act('power','C');}},
+    {at:35,f:()=>act('lid','C')}]},
+  {id:'morgen',name:'Fører kommer om morgenen',d:'Avarmering med førerkort',sel:'A',steps:[
+    {at:1,f:()=>{explain('Scenario: morgen','Føreren av A avarmerer med førerkortet før hun går bort til maskinen. Etterpå prøver noen å starte B uten kort.');act('arm','A');}},
+    {at:3,f:()=>go(thief,156,230)},
+    {at:70,f:()=>act('engine','A')},
+    {at:80,f:()=>act('vib','A')},
+    {at:100,f:()=>{act('engine','B');selected='B';buildUnitPanel();}}]},
+];
+function renderScen(){
+  $('#scenarios').innerHTML=SCEN.map(s=>`<button type="button" class="scen-btn ${activeScen===s.id?'on':''}" data-scen="${s.id}"><b>${s.name}</b><span>${s.d}</span></button>`).join('');
+}
+function startScen(id){
+  const s=SCEN.find(x=>x.id===id); setEnv(s.env||'skog'); resetAll(); activeScen=id; selected=s.sel; script={steps:s.steps,i:0};
+  renderScen(); buildUnitPanel(); paused=false; $('#pause').textContent='Pause';
+}
+
+/* ---------- miljø ---------- */
+function setEnv(e){env=e;units.forEach(u=>u.env=e);if(units[0].env)syncEnvUI();}
+function envEvent(k){
+  if(k==='truck'){log('Hendelse','info','En tung lastebil kjører forbi på veien.');units.forEach(u=>{if(u.armed)log(u.id,'info','IMU: kraftig vibrasjon.');});
+    log('Sentral','ok','Alle maskinene kjente den samme vibrasjonen samtidig. Tolkes som trafikk, ingen alarm.');
+    explain('Felles vibrasjon er ikke innbrudd','Når alle maskinene kjenner samme vibrasjon på samme tid, er det en lastebil, et tog eller anleggstrafikk. Et innbrudd gir vibrasjon på én maskin.');}
+  if(k==='wind'){log('Hendelse','info','Kraftige vindkast.');units.forEach(u=>{if(u.armed)log(u.id,'info','IMU og radar: urolig signal.');});
+    log('Sentral','ok','Værdata viser vindkast på 18 m/s. Følsomheten for vibrasjon og radar dempes mens det blåser. Sabotasje gir fortsatt alarm.');
+    explain('Vær gir ikke alarm','Alle maskinene ser det samme urolige signalet, og værdata for stedet bekrefter sterk vind. Plattformen demper følsomheten midlertidig.');}
+}
+function stepWalkers(h){
+  const road=document.getElementById('roadPath');if(!road)return;const L=road.getTotalLength();
+  const rate=units.some(u=>u.env==='by')?[3,6]:units.some(u=>u.env==='landlig')?[40,80]:null;
+  if(rate&&t>=nextWalker){nextWalker=t+rnd(rate[0],rate[1]);const dir=Math.random()<.5?1:-1;walkers.push({s:dir>0?0:L,dir,off:(Math.random()<.5?-1:1)*rnd(13,22),v:rnd(2,3.5),seen:{}});}
+  walkers.forEach(w=>{w.s+=w.dir*w.v*h;const p=road.getPointAtLength(Math.max(0,Math.min(L,w.s))),q=road.getPointAtLength(Math.max(0,Math.min(L,w.s+1)));const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1;w.x=p.x-dy/d*w.off;w.y=p.y+dx/d*w.off;
+    units.forEach(u=>{if(u.armed&&!w.seen[u.id]&&dist(w,u)<=R){w.seen[u.id]=true;envStats.seen++;if(u.env==='landlig')log(u.id,'info','Radar: person går forbi i ytre sone. Logges.');}});});
+  walkers=walkers.filter(w=>w.s>=0&&w.s<=L);
+}
+
+/* ---------- verden ---------- */
+function moveEnt(o,v,dt){if(o.tx==null)return;const dx=o.tx-o.x,dy=o.ty-o.y,d=Math.hypot(dx,dy),s=v*dt;if(d<=s){o.x=o.tx;o.y=o.ty;o.tx=null;}else{o.x+=dx/d*s;o.y+=dy/d*s;}}
+function stepWorld(dt){
+  const steps=Math.ceil(dt/0.5), h=dt/steps;
+  for(let k=0;k<steps;k++){
+    t+=h;H=h; moveEnt(thief,3,h); moveEnt(elk,4,h); tags.forEach(g=>moveEnt(g,4,h)); stepWalkers(h);
+    if(script) while(script.i<script.steps.length&&t>=script.steps[script.i].at){script.steps[script.i].f();script.i++;}
+    units.forEach(stepUnit); evalCentral(); tags.forEach(stepTag); evalTags();
+  }
+}
+
+/* ---------- tegning ---------- */
+function drawStatic(){
+  let s=`<rect x="0" y="0" width="600" height="420" class="ground"/>`;
+  for(let x=50;x<600;x+=50) s+=`<line x1="${x}" y1="0" x2="${x}" y2="420" class="grid-l"/>`;
+  for(let y=50;y<420;y+=50) s+=`<line x1="0" y1="${y}" x2="600" y2="${y}" class="grid-l"/>`;
+  s+=`<path id="roadPath" d="M-10 400 C150 392 230 372 300 345 S470 268 610 250" class="road"/>`;
+  s+=`<rect x="112" y="98" width="420" height="262" rx="6" class="fence"/><text x="120" y="114" class="maptxt">Anleggsområde, gjerde</text>`;
+  s+=`<g transform="translate(${tower.x},${tower.y})"><path d="M-9 28 L0 -12 L9 28 M-6 14 H6 M-3 2 H3" class="mast"/><circle cx="0" cy="-14" r="3" class="mastdot"/><text x="-14" y="10" text-anchor="end" class="maptxt">Mobilmast</text></g>`;
+  s+=`<g transform="translate(${sat.x},${sat.y})"><rect x="-5" y="-5" width="10" height="10" class="satb"/><rect x="-21" y="-3" width="13" height="6" class="satp"/><rect x="8" y="-3" width="13" height="6" class="satp"/><text x="26" y="4" class="maptxt">Satellitt (NTN)</text></g>`;
+  s+=`<g transform="translate(250,410)"><line x1="0" y1="0" x2="100" y2="0" class="scale"/><line x1="0" y1="-4" x2="0" y2="4" class="scale"/><line x1="100" y1="-4" x2="100" y2="4" class="scale"/><text x="50" y="-7" text-anchor="middle" class="maptxt">50 m</text></g>`;
+  $('#static').innerHTML=s;
+  $('#jamL').innerHTML=`<g id="jamG" class="drag" aria-label="Jammer"><circle id="jNoise" class="jam-noise"/><circle id="jCore" class="jam-core"/><rect x="-26" y="-9" width="52" height="18" rx="4" class="jam-box" id="jBox"/><text id="jTxt" text-anchor="middle" class="jam-txt" y="4">JAMMER</text></g>`;
+  $('#dragL').innerHTML=`<g id="thiefG" class="drag" aria-label="Person"><circle r="16" class="hit"/><circle cx="0" cy="-7" r="4.5" class="thief-b"/><path d="M-6 9 Q0 -4 6 9 Z" class="thief-b"/><text x="0" y="23" text-anchor="middle" class="ent-lab">Person</text></g>`+
+    `<g id="elkG" class="drag" aria-label="Elg"><circle r="18" class="hit"/><ellipse cx="0" cy="0" rx="12" ry="6" class="elk-b"/><circle cx="13" cy="-5" r="4" class="elk-b"/><path d="M12 -9 L9 -15 M15 -9 L18 -15" stroke="#8A5A2B" stroke-width="2" fill="none"/><text x="0" y="20" text-anchor="middle" class="ent-lab">Elg</text></g>`;
+}
+function dotCls(u){if(u.mode==='alarm')return 'd-crit';if(u.mode==='forvarsel')return 'd-warn';if(u.mode==='beredskap')return 'd-ber';return u.armed?'d-ok':'d-mute';}
+function drawDyn(){
+  const now=performance.now(); flashes=flashes.filter(f=>f.until>now);
+  let s='';
+  units.forEach(u=>{const ok=lteOk(u);s+=`<line x1="${u.x}" y1="${u.y}" x2="${tower.x}" y2="${tower.y+16}" class="up ${ok?'':'bad'}"/>`;
+    if(!ok)s+=`<text x="${(u.x+tower.x)/2}" y="${(u.y+tower.y)/2+5}" text-anchor="middle" class="xmark">×</text>`;});
+  for(let i=0;i<units.length;i++)for(let j=i+1;j<units.length;j++){const a=units[i],b=units[j];s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="mesh ${loraOk(a)&&loraOk(b)?'':'bad'}"/>`;}
+  flashes.forEach(f=>{const op=Math.max(0,(f.until-now)/900);s+=`<line x1="${f.a.x}" y1="${f.a.y}" x2="${f.b.x}" y2="${f.b.y}" class="fl fl-${f.kind}" style="opacity:${op.toFixed(2)}"/>`;});
+  units.forEach(u=>{
+    const rr=R*(u.mode==='beredskap'?1.3:1), hot=u.personIn&&u.armed;
+    s+=`<circle cx="${u.x}" cy="${u.y}" r="${rr}" class="ring ${hot?'hot':(u.mode==='beredskap'?'ber':'')}"/>`;
+    s+=`<circle cx="${u.x}" cy="${u.y}" r="${RC}" class="core"/>`;
+    if(u.siren) s+=`<circle cx="${u.x}" cy="${u.y}" r="30" class="siren"/>`;
+    u.cams.forEach(c=>{if(c.state==='cut'||!u.armed)return;const p=camPos(u,c),A=camAng(c),a1=(A-45)*Math.PI/180,a2=(A+45)*Math.PI/180;
+      const cls=c.state==='ok'||c.state==='turned'?(c.seenP?'hot':''):'bad';
+      s+=`<path d="M${p.x} ${p.y}L${(p.x+CR*Math.cos(a1)).toFixed(1)} ${(p.y+CR*Math.sin(a1)).toFixed(1)}A${CR} ${CR} 0 0 1 ${(p.x+CR*Math.cos(a2)).toFixed(1)} ${(p.y+CR*Math.sin(a2)).toFixed(1)}Z" class="cone ${cls}"/>`;});
+    s+=`<g class="mach" data-id="${u.id}" transform="translate(${u.x},${u.y})">${u.id===selected?'<rect x="-29" y="-20" width="58" height="40" rx="6" class="sel"/>':''}<rect x="-22" y="-13" width="44" height="26" rx="4" class="m-body"/><rect x="-18" y="-9" width="13" height="18" rx="2" class="m-cab"/><text x="8" y="5" text-anchor="middle" class="m-id">${u.id}</text><circle cx="21" cy="-12" r="5.5" class="dot ${dotCls(u)}"/><text x="0" y="33" text-anchor="middle" class="m-lab">${u.name} · ${ENVNAME[u.env]}</text></g>`;
+    u.cams.forEach(c=>{const p=camPos(u,c);s+=`<circle cx="${p.x}" cy="${p.y}" r="4" class="pod ${c.state==='ok'?'':'bad'}"><title>Kamera ${c.id} ${c.name}</title></circle>`;});
+  });
+  huts.forEach(h=>{const w=h.id==='K'?34:42;if(h.siren)s+=`<circle cx="${h.x}" cy="${h.y}" r="30" class="siren"/>`;s+=`<g transform="translate(${h.x},${h.y})"><rect x="${-w/2}" y="-12" width="${w}" height="24" rx="2" class="hut ${h.id==='K'?'k':''} ${h.lat?'al':''}"/><line x1="${w/2-10}" y1="12" x2="${w/2-2}" y2="12" class="door ${h.door?'open':''}"/>${h.id==='G'?'<circle cx="15" cy="-6" r="3" class="gw-dot"/>':''}<text x="0" y="26" text-anchor="middle" class="maptxt">${h.id==='G'?'Brakke, gateway':'Verktøycontainer'}</text></g>`;});
+  tags.forEach(g=>{if(g.heardBy&&t-g.heardT<12){const w=g.heardBy==='G'?SITEGW:U(g.heardBy);s+=`<line x1="${g.x.toFixed(1)}" y1="${g.y.toFixed(1)}" x2="${w.x}" y2="${w.y}" class="taglink"/>`;}});
+  walkers.forEach(w=>{s+=`<circle cx="${w.x.toFixed(1)}" cy="${w.y.toFixed(1)}" r="3.5" class="walker"/>`;});
+  $('#dyn').innerHTML=s;
+  $('#envStat').textContent=`Forbipasserende i radarsonene: ${envStats.seen} · alarmer fra dem: 0`;
+  tags.forEach((g,i)=>{const el=document.getElementById('tag'+i);if(!el)return;el.setAttribute('transform',`translate(${g.x.toFixed(1)},${g.y.toFixed(1)})`);const c=tagC[g.id];el.querySelector('.tag').setAttribute('class','tag t-'+c.lv);});
+  $('#thiefG').setAttribute('transform',`translate(${thief.x.toFixed(1)},${thief.y.toFixed(1)})`);
+  $('#elkG').setAttribute('transform',`translate(${elk.x.toFixed(1)},${elk.y.toFixed(1)})`);
+  const jg=$('#jamG'); jg.style.display=jammer.on?'':'none';
+  jg.setAttribute('transform',`translate(${jammer.x.toFixed(1)},${jammer.y.toFixed(1)})`);
+  $('#jCore').setAttribute('r',jammer.r); $('#jNoise').setAttribute('r',jammer.r*2.2);
+  $('#jTxt').textContent=jammer.type==='bred'?'BREDBÅND':'JAMMER';
+  $('#jBox').setAttribute('x',jammer.type==='bred'?-34:-26);$('#jBox').setAttribute('y',jammer.r-26);$('#jTxt').setAttribute('y',jammer.r-13);$('#jBox').setAttribute('width',jammer.type==='bred'?68:52);
+}
+const chip=(t,c)=>`<span class="chip c-${c}">${t}</span>`;
+const modeName=u=>({ro:u.armed?'Vakt':'I bruk',beredskap:'Beredskap',forvarsel:'Forvarsel',alarm:'Alarm'})[u.mode];
+const modeC=u=>({ro:u.armed?'ok':'mute',beredskap:'ber',forvarsel:'warn',alarm:'bad'})[u.mode];
+function chipsHTML(u){
+  const c=[chip('Miljø: '+ENVNAME[u.env],'ber'),chip(u.armed?'Armert':'Avarmert',u.armed?'ok':'mute'),chip('Lokalt: '+modeName(u),modeC(u)),
+    chip('LTE-M '+(lteOk(u)?'ok':'blokkert'),lteOk(u)?'ok':'bad'),chip('Satellitt '+(satOk(u)?'ok':'blokkert'),satOk(u)?'ok':'bad'),
+    chip('LoRa '+(loraOk(u)?'ok':'blokkert'),loraOk(u)?'ok':'bad'),chip('GNSS '+(inJam(u)?'jamming oppdaget':'ok'),inJam(u)?'bad':'ok'),
+    chip(u.power?'Maskinstrøm':'Batteri '+Math.round(u.battery)+' %',u.power?'ok':'warn'),chip(u.tamper.ant?'Intern antenne':'Ekstern antenne',u.tamper.ant?'warn':'ok')];
+  u.cams.forEach(k=>c.push(chip(`Kamera ${k.id} ${k.name}: ${u.armed?camStateName[k.state]:'av (avarmert)'}`,k.state==='ok'?(u.armed?'ok':'mute'):'bad')));
+  if(u.pendingImg) c.push(chip('Bilde venter på mobilnett','warn'));
+  c.push(chip(`CAN: motor ${u.engine?'går':'av'}`,u.engine?'ber':'ok'),chip(`CAN: drivstoff ${Math.round(u.can.fuel)} %`,u.can.fuelAl?'bad':'ok'),chip(u.can.gpsDisp?'GPS-skjerm på CAN':'GPS-skjerm borte fra CAN',u.can.gpsDisp?'ok':'bad'));
+  if(noisy(u)&&!inJam(u)) c.push(chip('Høyt støynivå','warn'));
+  if(u.siren) c.push(chip('Sirene på','bad'));
+  if(u.queue.length) c.push(chip(u.queue.length+' meldinger lagret lokalt','warn'));
+  return c.join('');
+}
+function buildUnitPanel(){
+  const u=U(selected), d=k=>u.tamper[k]?'disabled':'';
+  $('#unitPanel').innerHTML=`<div class="card-head"><h2>Maskin ${u.id} · ${u.name}</h2><div class="seg" role="group" aria-label="Velg maskin">${units.map(v=>`<button type="button" data-pick="${v.id}" class="${v.id===u.id?'on':''}">${v.id}</button>`).join('')}</div></div>
+  <div class="chips" id="chips">${chipsHTML(u)}</div>
+  <div class="acts">
+    <div class="grp"><div class="grp-h">Miljø</div><div class="btns"><div class="seg" role="group" aria-label="Miljø for maskinen">${['skog','landlig','by'].map(k=>`<button type="button" data-uenv="${k}" class="${u.env===k?'on':''}">${ENVNAME[k]}</button>`).join('')}</div></div></div>
+    <div class="grp"><div class="grp-h">Fører</div><div class="btns"><button type="button" class="btn" data-act="arm">${u.armed?'Avarmer med førerkort':'Armer enheten'}</button><button type="button" class="btn" data-act="engine">${u.engine?'Stopp motoren':'Start motoren'}</button></div></div>
+    <div class="grp"><div class="grp-h">Sensorer</div><div class="btns"><button type="button" class="btn" data-act="vib">Vibrasjon fra verktøy</button><button type="button" class="btn" data-act="glass">Knus kabinruta</button></div></div>
+    <div class="grp"><div class="grp-h">Sabotasje</div><div class="btns"><button type="button" class="btn danger" data-act="lid" ${d('lid')}>Åpne lokket</button><button type="button" class="btn danger" data-act="mesh" ${d('mesh')}>Bor i kapslingen</button><button type="button" class="btn danger" data-act="ant" ${d('ant')}>Kutt antennekabelen</button><button type="button" class="btn danger" data-act="loop" ${d('loop')}>Kutt GPS-kabelsløyfen</button><button type="button" class="btn danger" data-act="power" ${u.power?'':'disabled'}>Kutt strømmen</button></div></div>
+    <div class="grp"><div class="grp-h">CAN-buss</div><div class="btns"><button type="button" class="btn danger" data-act="fuel">${u.can.tap?'Stopp tappingen':'Tapp drivstoff'}</button><button type="button" class="btn danger" data-act="gpsdisp" ${u.can.gpsDisp?'':'disabled'}>Koble fra GPS-skjermen</button></div></div>
+    <div class="grp"><div class="grp-h">Kameraer</div><div class="btns"><div class="seg camseg" role="group" aria-label="Velg kamera">${u.cams.map(c=>`<button type="button" data-cam="${c.id}" class="${c.id===u.selCam?'on':''}">${c.id} ${c.name}</button>`).join('')}</div>${(()=>{const c=u.cams.find(c=>c.id===u.selCam),x=c.state!=='ok'?'disabled':'';return `<button type="button" class="btn danger" data-act="tape" ${x}>Teip over linsen</button><button type="button" class="btn danger" data-act="spray" ${x}>Spray linsen</button><button type="button" class="btn danger" data-act="blind" ${x}>Blend med lommelykt</button><button type="button" class="btn danger" data-act="turn" ${x}>Vri kameraet bort</button><button type="button" class="btn danger" data-act="cutcam" ${c.state==='cut'?'disabled':''}>Kutt kamerakabelen</button><button type="button" class="btn ghost" data-act="camfix" ${c.state==='ok'?'disabled':''}>Rengjør kameraet</button>`;})()}</div></div>
+    <div class="grp"><div class="grp-h">Etterpå</div><div class="btns"><button type="button" class="btn ghost" data-act="restore">Tilbakestill enheten</button></div></div>
+  </div>`;
+}
+function buildCentral(){
+  $('#units').innerHTML=units.map(u=>`<div class="urow" id="ur-${u.id}"><div class="u-name"><b>${u.id}</b> ${u.name}</div><span class="pill" data-f="pill"></span><div class="u-meta" data-f="meta"></div><div class="u-reason" data-f="reason"></div></div>`).join('');
+}
+function updCentral(){
+  units.forEach(u=>{const c=central[u.id],r=$('#ur-'+u.id),p=r.querySelector('[data-f=pill]');
+    p.textContent=c.state;p.className='pill p-'+c.state;
+    r.querySelector('[data-f=meta]').textContent=`Sist hørt for ${ago(t-c.lastSeen)} siden · ${c.channel} · forventer hvert ${c.interval} s`;
+    r.querySelector('[data-f=reason]').textContent=c.state==='Normal'?'':c.reason;});
+  const al=units.filter(u=>central[u.id].state==='Alarm'), ta=tags.filter(g=>tagC[g.id].lv==='alarm'&&!tagC[g.id].acked), ha=huts.filter(h=>h.lat&&!h.acked), key=ha.map(h=>h.id+h.msg).join('|')+al.map(u=>u.id+central[u.id].reason).join('|')+'#'+ta.map(g=>g.id+tagC[g.id].status).join('|');
+  if(key!==lastAlarmKey){lastAlarmKey=key;
+    const items=[...al.map(u=>({h:`Alarm · ${u.id} ${u.name}`,b:central[u.id].reason,a:`data-ack="${u.id}"`})),...ta.map(g=>({h:`Alarm · ${g.name}`,b:tagC[g.id].msg,a:`data-tack="${g.id}"`})),...ha.map(h=>({h:`Alarm · ${h.name}`,b:h.msg,a:`data-hack="${h.id}"`}))];
+    $('#alarms').innerHTML=items.length?items.map(x=>`<div class="alarm"><div><div class="alarm-h"></div><div class="alarm-b"></div></div><button type="button" class="btn primary" ${x.a}>Kvitter</button></div>`).join(''):`<div class="allclear">Ingen aktive alarmer</div>`;
+    $('#alarms').querySelectorAll('.alarm').forEach((el,i)=>{el.querySelector('.alarm-h').textContent=items[i].h;el.querySelector('.alarm-b').textContent=items[i].b;});}
+}
+function updImages(){
+  const key=images.map(i=>i.key).join('|'); if(key===lastImgKey) return; lastImgKey=key;
+  $('#imgsH').hidden=!images.length;
+  $('#imgs').innerHTML=images.map(im=>`<figure class="snap">${snapSVG(im)}<figcaption>${im.unit} · kamera ${im.cam}${im.person?' · person':''}${im.masked?' · siste før sabotasje':''}${im.late?' · forsinket':''}</figcaption></figure>`).join('');
+}
+function render(){updImages();updTags();$('#clock').textContent=fmt(t);drawDyn();updCentral();const ch=$('#chips');if(ch)ch.innerHTML=chipsHTML(U(selected));}
+
+/* ---------- jammer-UI ---------- */
+function syncJamUI(){$('#jamToggle').textContent=jammer.on?'Slå av jammer':'Slå på jammer';$('#jtLte').checked=jammer.type==='lte';$('#jtBred').checked=jammer.type==='bred';$('#jamR').value=jammer.r;}
+$('#jamToggle').addEventListener('click',()=>{jammer.on=!jammer.on;syncJamUI();log('Jammer',jammer.on?'alarm':'ok',jammer.on?`Jammer slått på (${jammer.type==='lte'?'mobil og GPS':'bredbånd'}).`:'Jammer slått av.');});
+document.querySelectorAll('input[name=jt]').forEach(r=>r.addEventListener('change',e=>{jammer.type=e.target.value;if(jammer.on)log('Jammer','alarm',`Jammertype endret til ${jammer.type==='lte'?'mobil og GPS':'bredbånd'}.`);}));
+$('#jamR').addEventListener('input',e=>{jammer.r=+e.target.value;});
+
+/* ---------- interaksjon ---------- */
+const map=$('#map');
+function svgPt(e){const p=map.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(map.getScreenCTM().inverse());}
+function makeDrag(el,get){
+  let on=false;
+  el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();on=true;get().tx=null;try{el.setPointerCapture(e.pointerId);}catch(_){}});
+  el.addEventListener('pointermove',e=>{if(!on)return;const p=svgPt(e),obj=get();obj.x=clamp(p.x,8,592);obj.y=clamp(p.y,8,412);});
+  const end=()=>{on=false;};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+map.addEventListener('pointerdown',e=>{const g=e.target.closest('.mach');if(g){selected=g.dataset.id;buildUnitPanel();}});
+$('#unitPanel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.pick){selected=b.dataset.pick;buildUnitPanel();}else if(b.dataset.cam){U(selected).selCam=b.dataset.cam;buildUnitPanel();}else if(b.dataset.uenv){const u=U(selected);u.env=b.dataset.uenv;log('Sentral','info',`Miljøprofil for ${u.id} ${u.name.toLowerCase()} satt til ${ENVNAME[u.env].toLowerCase()}.`);explain(`Miljø for ${u.id}: ${ENVNAME[u.env]}`,ENVNOTE[u.env]);buildUnitPanel();syncEnvUI();}else if(b.dataset.act) act(b.dataset.act,selected);});
+$('#alarms').addEventListener('click',e=>{const b=e.target.closest('[data-ack]');if(b)ack(b.dataset.ack);const hb=e.target.closest('[data-hack]');if(hb){const h=huts.find(x=>x.id===hb.dataset.hack);h.acked=true;h.siren=false;lastAlarmKey=null;log('Sentral','ok',`Operatør kvitterte alarmen for ${h.name} og slo av sirenen.`);buildHutPanel();}const tb=e.target.closest('[data-tack]');if(tb){const c=tagC[tb.dataset.tack];c.acked=true;c.latched=false;lastAlarmKey=null;log('Sentral','ok',`Operatør kvitterte alarmen for ${tags.find(g=>g.id===tb.dataset.tack).name}.`);}});
+$('#envSeg').addEventListener('click',e=>{const b=e.target.closest('[data-env]');if(b){setEnv(b.dataset.env);log('Sentral','info',`Miljøprofil satt til ${b.textContent.toLowerCase()}.`);explain('Miljøprofil: '+b.textContent,ENVNOTE[env]);}});
+document.querySelector('[data-envev=truck]').parentElement.addEventListener('click',e=>{const b=e.target.closest('[data-envev]');if(b)envEvent(b.dataset.envev);});
+$('#hutPanel').addEventListener('click',e=>{const b=e.target.closest('[data-hut]');if(b)hutAct(b.dataset.hut,b.dataset.h);});
+$('#tagrows').addEventListener('click',e=>{const b=e.target.closest('[data-chk]');if(!b)return;const g=tags.find(x=>x.id===b.dataset.chk),c=tagC[g.id];c.checkout=!c.checkout;log('App','ok',c.checkout?`${g.name} sjekket ut til prosjekt Elvegata (NFC i appen).`:`${g.name} sjekket inn igjen.`);});
+$('#modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;siteMode=b.dataset.mode;syncModeUI();log('Sentral','info',siteMode==='natt'?'Regler for natt: all bevegelse av utstyr gir alarm.':'Regler for arbeidstid: utstyr kan flyttes, men ikke ut av anlegget uten utsjekk.');});
+$('#cellOff').addEventListener('change',e=>{cellOff=e.target.checked;log('Sentral','info',cellOff?'Ingen mobildekning på stedet. Enhetene bruker satellitt og LoRa.':'Mobildekning er tilbake.');});
+$('#scenarios').addEventListener('click',e=>{const b=e.target.closest('[data-scen]');if(b)startScen(b.dataset.scen);});
+$('#speed').addEventListener('click',e=>{const b=e.target.closest('[data-speed]');if(!b)return;speed=+b.dataset.speed;document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',x===b));});
+$('#pause').addEventListener('click',()=>{paused=!paused;$('#pause').textContent=paused?'Fortsett':'Pause';});
+$('#resetBtn').addEventListener('click',()=>{resetAll();});
+$('#showHB').addEventListener('change',e=>{showHB=e.target.checked;});
+
+drawStatic();buildCentral();setEnv('skog');resetAll();
+$('#dragL').insertAdjacentHTML('beforeend',TAGDEF.map((d,i)=>`<g id="tag${i}" class="drag" aria-label="${d.name}"><circle r="14" class="hit"/><rect x="-6" y="-6" width="12" height="12" rx="2" transform="rotate(45)" class="tag t-ok"/><text x="0" y="20" text-anchor="middle" class="tag-lab">${d.short}</text></g>`).join(''));
+TAGDEF.forEach((d,i)=>makeDrag(document.getElementById('tag'+i),()=>tags[i]));
+makeDrag($('#thiefG'),()=>thief);makeDrag($('#elkG'),()=>elk);makeDrag($('#jamG'),()=>jammer);
+let last=performance.now();
+function loop(now){const rd=Math.min(.25,(now-last)/1000);last=now;if(!paused)stepWorld(rd*speed);render();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

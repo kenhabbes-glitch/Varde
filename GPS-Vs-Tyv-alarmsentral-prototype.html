@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>GPS Vs Tyv Alarmsentral</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: kontrollrom – alarmkø, sakspanel og telefon side om side; oversikt og integrasjoner under */
+:root{
+  --bg:#ECEDE8;--surface:#F8F8F4;--sunk:#E3E5DE;--ink:#1D2227;--muted:#5D656E;--line:#CDD0C7;
+  --hivis:#E6A11A;--hivis-ink:#5E4100;--ok:#2C7F52;--warn:#B86E00;--crit:#C2372C;--radio:#23788A;
+  --crit-soft:rgba(194,55,44,.12);--warn-soft:rgba(184,110,0,.12);--ok-soft:rgba(44,127,82,.12);--radio-soft:rgba(35,120,138,.12);
+  --phone:#14181C;--phone-ink:#ECEFF2;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161B;--surface:#1A2027;--sunk:#151A20;--ink:#E6E9ED;--muted:#98A2AD;--line:#2C343E;
+  --hivis:#F0B03A;--hivis-ink:#F6D58D;--ok:#4CC08A;--warn:#EFA43B;--crit:#F0675B;--radio:#55B5C8;
+  --crit-soft:rgba(240,103,91,.16);--warn-soft:rgba(239,164,59,.15);--ok-soft:rgba(76,192,138,.14);--radio-soft:rgba(85,181,200,.14);
+  --phone:#0B0E11;--phone-ink:#ECEFF2;color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#12161B;--surface:#1A2027;--sunk:#151A20;--ink:#E6E9ED;--muted:#98A2AD;--line:#2C343E;
+  --hivis:#F0B03A;--hivis-ink:#F6D58D;--ok:#4CC08A;--warn:#EFA43B;--crit:#F0675B;--radio:#55B5C8;
+  --crit-soft:rgba(240,103,91,.16);--warn-soft:rgba(239,164,59,.15);--ok-soft:rgba(76,192,138,.14);--radio-soft:rgba(85,181,200,.14);
+  --phone:#0B0E11;--phone-ink:#ECEFF2;color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1400px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:30px;font-weight:700;line-height:1.05}
+h2{font-size:18px;font-weight:600}
+h3{font-size:15px;font-weight:600}
+.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--f-display);font-weight:600;text-transform:uppercase;letter-spacing:1.4px;font-size:12px;color:var(--hivis-ink);display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:"";width:18px;height:6px;background:repeating-linear-gradient(135deg,var(--hivis) 0 4px,var(--ink) 4px 8px)}
+.sub{color:var(--muted);font-size:13px;margin:4px 0 0;max-width:72ch}
+.top-r{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.clock{font-family:var(--f-mono);font-size:18px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;border-radius:7px;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--crit);border-color:color-mix(in srgb,var(--crit) 45%,var(--line))}
+.btn.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.btn.sm{padding:4px 9px;font-size:12px}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--hivis);outline-offset:2px}
+select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column}
+.stat b{font-family:var(--f-display);font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.hot{border-color:var(--crit)}
+.stat.hot b{color:var(--crit)}
+.grid{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.5fr) 380px;gap:14px;align-items:start}
+@media (max-width:1180px){.grid{grid-template-columns:minmax(240px,.9fr) minmax(0,1.5fr)}.phone-col{grid-column:1/-1;justify-self:center}}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.note{font-size:12px;color:var(--muted);margin:0}
+.queue{display:flex;flex-direction:column;gap:6px}
+.qi{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:4px 10px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px 8px 0;cursor:pointer;color:var(--ink);font:inherit;overflow:hidden}
+.qi:hover{border-color:var(--muted)}
+.qi.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.qi .bar{grid-row:1/4;border-radius:0}
+.p1 .bar{background:var(--crit)}.p2 .bar{background:var(--warn)}.p3 .bar{background:var(--muted)}
+.qi .qt{font-weight:600;font-size:13px;line-height:1.3}
+.qi .qm{font-size:12px;color:var(--muted);grid-column:2/4}
+.qi .qs{grid-row:1;grid-column:3}
+.qi.done{opacity:.6}
+.pill{font:600 11.5px var(--f-body);padding:2px 9px;border-radius:999px;white-space:nowrap;align-self:start}
+.s-Ny{background:var(--crit);color:#fff}.s-Behandles{background:var(--warn-soft);color:var(--warn)}.s-Videresendt{background:var(--radio-soft);color:var(--radio)}.s-Avsluttet{background:var(--ok-soft);color:var(--ok)}
+.countdown{font-size:12px;color:var(--crit);grid-column:2/4;font-variant-numeric:tabular-nums}
+.detail-h{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-start;justify-content:space-between}
+.detail-h h2{font-size:22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:620px){.dgrid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--sunk);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.panel-h{font-family:var(--f-display);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.snap svg,.mini svg{width:100%;height:auto;display:block;border-radius:6px}
+.tl{list-style:none;margin:0;padding:0;font-size:12.5px;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;padding:4px 0;border-top:1px solid var(--line)}
+.tl li:first-child{border-top:0}
+.tl time{font-family:var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.arcbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+pre.sia{margin:0;font:12px/1.45 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:7px;padding:8px 10px;white-space:pre-wrap;word-break:break-all}
+.sheet{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.callrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;font-size:13px;align-items:center}
+.callrow small{color:var(--muted)}
+.lower{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px}
+@media (max-width:980px){.lower{grid-template-columns:minmax(0,1fr)}}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding:6px 8px 6px 0}
+td{border-bottom:1px solid var(--line);padding:7px 8px 7px 0;vertical-align:top;font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.d-ok{background:var(--ok)}.d-warn{background:var(--warn)}.d-off{background:var(--muted)}.d-crit{background:var(--crit)}
+.rules{display:flex;flex-direction:column;gap:6px;font-size:13px;margin:0;padding-left:18px}
+/* telefon */
+.phone-col{display:flex;flex-direction:column;gap:8px;align-items:center}
+.phone{width:360px;max-width:100%;background:var(--phone);border-radius:38px;padding:12px;box-shadow:0 0 0 1px var(--line)}
+.screen{background:var(--bg);border-radius:28px;height:700px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sbar{display:flex;justify-content:space-between;padding:10px 20px 4px;font:600 12px var(--f-body);color:var(--ink)}
+.appbar{padding:6px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+.appbar h3{font-size:20px}
+.appbody{flex:1;overflow-y:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--surface)}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 12px var(--f-body);padding:10px 4px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs button.on{color:var(--ink)}
+.tabs i{width:18px;height:3px;border-radius:2px;background:transparent}
+.tabs button.on i{background:var(--hivis)}
+.acard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.acard.alarm{border-color:var(--crit)}
+.acard .t{font-weight:600;font-size:14px;line-height:1.35}
+.acard .m{font-size:12px;color:var(--muted)}
+.bigstate{border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.bs-armed{background:var(--ok-soft)}
+.bs-armed b{color:var(--ok)}
+.bs-off{background:var(--warn-soft)}
+.bs-off b{color:var(--warn)}
+.bigstate b{font-family:var(--f-display);font-size:24px}
+.bigstate span{font-size:12.5px;color:var(--muted)}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.mrow:first-child{border-top:0}
+.mrow .n{font-weight:600}
+.mrow .d{font-size:12px;color:var(--muted)}
+.wide{width:100%;padding:11px;font-size:14px;border-radius:12px}
+.push{position:absolute;left:10px;right:10px;top:30px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:2px;z-index:5;cursor:pointer}
+.push b{font-size:13px}
+.push span{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.push{animation:drop .35s ease}}
+@keyframes drop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;z-index:6}
+.osheet{background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:18px 16px 22px;display:flex;flex-direction:column;gap:10px;text-align:center}
+.osheet .ring{width:76px;height:76px;border-radius:50%;border:3px solid var(--hivis);margin:4px auto;display:flex;align-items:center;justify-content:center;font:700 13px var(--f-display);color:var(--hivis-ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 12px var(--f-body);padding:6px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.caption{font-size:12px;color:var(--muted);text-align:center;max-width:360px}
+.foot{font-size:12px;color:var(--muted);max-width:95ch}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:20}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Prototype · mottak og håndtering av alarmer</div>
+      <h1>GPS Vs Tyv Alarmsentral</h1>
+      <p class="sub">Slik kan bedriften selv ta imot og håndtere alarmer, med automatisk videresending til en alarmstasjon. Telefonen til høyre viser appen for anleggsleder og arbeidere. Alle navn, numre og avtaler er eksempler.</p>
+    </div>
+    <div class="top-r">
+      <span class="clock" id="clock">02:16:10</span>
+      <button type="button" class="btn" id="simBtn">Simuler ny alarm</button>
+      <button type="button" class="btn" id="resetBtn">Nullstill</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Status nå" id="stats"></section>
+
+  <main class="grid">
+    <section class="card" aria-label="Alarmkø">
+      <div class="card-head"><h2>Alarmkø</h2><span class="note">Prioritet 1 øverst</span></div>
+      <div class="queue" id="queue"></div>
+    </section>
+
+    <section class="card" id="detail" aria-label="Valgt alarm"></section>
+
+    <section class="phone-col" aria-label="App">
+      <div class="phone"><div class="screen" id="screen">
+        <div class="sbar"><span id="pclock">02:16</span><span>LTE · 82 %</span></div>
+        <div class="appbar"><h3 id="ptitle">Alarmer</h3><div class="seg" role="group" aria-label="Rolle" id="roleSeg"><button type="button" data-role="leder" class="on">Leder</button><button type="button" data-role="arbeider">Arbeider</button></div></div>
+        <div class="appbody" id="pbody"></div>
+        <nav class="tabs" id="ptabs"><button type="button" data-tab="alarmer" class="on"><i></i>Alarmer</button><button type="button" data-tab="dag"><i></i>Arbeidsdag</button><button type="button" data-tab="utstyr"><i></i>Utstyr</button></nav>
+        <div id="pover"></div>
+      </div></div>
+      <p class="caption">Appen for bedriften. Anleggsleder får alarmer og kan handle direkte. Arbeidere bruker den til å avarmere maskiner og sjekke ut utstyr.</p>
+    </section>
+  </main>
+
+  <div class="lower">
+    <section class="card">
+      <div class="card-head"><h2>Anlegg og enheter</h2><span class="note">Eksempeldata</span></div>
+      <div class="tbl"><table><thead><tr><th>Anlegg</th><th>Status</th><th>Maskiner</th><th>Brakker</th><th>Utstyr</th><th>Avvik</th></tr></thead><tbody id="sites"></tbody></table></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Alarmstasjoner</h2><span class="note">SIA DC-09 over kryptert IP</span></div>
+      <div class="tbl"><table><thead><tr><th>Stasjon</th><th>Tilkobling</th><th>Rolle</th></tr></thead><tbody id="arcs"></tbody></table></div>
+      <h3>Regler for videresending</h3>
+      <ul class="rules">
+        <li>Prioritet 1 som ingen har tatt innen 3 minutter, sendes automatisk til primær alarmstasjon.</li>
+        <li>Stillhet med tegn på jamming og sabotasje på flere enheter sendes alltid med en gang.</li>
+        <li>Dyr, tester og alarmer i arbeidstid sendes aldri videre.</li>
+        <li>Bilder følger med som sikker lenke som stasjonen åpner.</li>
+      </ul>
+    </section>
+  </div>
+  <p class="foot">Prototypen kjører lokalt i nettleseren og er ikke koblet til noen alarmstasjon. Avtaler med Avarn, Securitas, Vaktcompaniet eller andre må inngås, og hver stasjon har egne krav til tilkobling, hendelseskoder og testing.</p>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const START=2*3600+16*60+10;
+let t=0, alarms, selId, nextNo, tab='alarmer', role='leder', overlay=null, push=null, appSel=null, dayState, tagsOut;
+const ARCS=[{id:'avarn',name:'Avarn Security',st:'Tilkoblet',test:'Test OK 02:00',role:'Primær (eksempel)'},{id:'securitas',name:'Securitas',st:'Tilkoblet',test:'Test OK 02:00',role:'Reserve (eksempel)'},{id:'vaktcompaniet',name:'Vaktcompaniet',st:'Ikke satt opp',test:'',role:'Mulig (eksempel)'}];
+const SITES=[{n:'Elvegata, Drammen',st:'Armert',m:'3 av 3 armert',b:'1 armert',u:'5 av 5 hørt',dev:'2 alarmer'},{n:'Fjellsrud massetak',st:'Armert',m:'4 av 4 armert',b:'2 armert',u:'11 av 12 hørt',dev:'1 savnet brikke'},{n:'Rv 13 Stamnes',st:'Armert',m:'2 av 2 armert',b:'1 armert',u:'4 av 4 hørt',dev:'Ingen mobildekning, bruker satellitt'},{n:'Lager Lier',st:'Delvis',m:'0 av 1 armert',b:'1 armert',u:'23 av 23 hørt',dev:'Ingen'}];
+const fmt=s=>{s=Math.floor(START+s)%86400;return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');};
+const mmss=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const e=$('#toast');e.textContent=m;e.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>e.hidden=true,2600);}
+
+function seed(){
+  t=0;nextNo=1044;selId='A-1042';tab='alarmer';overlay=null;push=null;appSel=null;
+  dayState={armed:{A:true,B:true,C:true},engine:{C:true},approval:null};
+  tagsOut={};
+  alarms=[
+    {id:'A-1042',prio:1,type:'Inntrenging',site:'Elvegata, Drammen',unit:'Gravemaskin A',title:'Radar og kamera bekrefter person ved maskinen',code:'BA',zone:'01',t:-46,state:'Ny',img:{cam:'A1',person:true,conf:95},ch:'LTE-M',ev:[[-79,'Kamera A1 ser en person (AI 95 %)'],[-66,'Radar: menneske innenfor sonen'],[-46,'Alarm sendt via LTE-M, signatur ok'],[-45,'Bilde mottatt fra kamera A1']]},
+    {id:'A-1043',prio:1,type:'Sabotasje',site:'Elvegata, Drammen',unit:'Gravemaskin A',title:'Kabelsløyfen rundt GPS-utstyret er brutt',code:'TA',zone:'04',t:-35,state:'Ny',img:{cam:'A2',person:false},ch:'LTE-M',ev:[[-35,'Sabotasje: kabelsløyfe brutt'],[-34,'Bilde mottatt fra kamera A2']]},
+    {id:'A-1039',prio:2,type:'Utstyr',site:'Fjellsrud massetak',unit:'Graveskuff 1,2 m (7F3A-02C1)',title:'Utstyr beveger seg utenfor arbeidstid',code:'BA',zone:'21',t:-410,state:'Behandles',owner:'Deg',ch:'LoRa via B',ev:[[-410,'Brikke i bevegelse, hørt av hjullaster B'],[-380,'Tatt av deg'],[-260,'Ringt anleggsleder, ikke svar']]},
+    {id:'A-1035',prio:3,type:'Teknisk',site:'Lager Lier',unit:'Hurtigkobling (7F3A-0377)',title:'Lavt batteri i utstyrsbrikke (12 %)',code:'XT',zone:'33',t:-5400,state:'Ny',ch:'LTE-M',ev:[[-5400,'Batteri under 15 %']]},
+  ];
+  alarms.forEach(a=>{a.forwardAt=a.prio===1?a.t+180:null;a.calls=null;a.arc=null;});
+  render();
+}
+const A=id=>alarms.find(a=>a.id===id);
+const open=a=>a.state!=='Avsluttet';
+function addEv(a,txt){a.ev.push([t,txt]);}
+
+/* ---------- handlinger ---------- */
+function take(a,who){if(a.state==='Ny'){a.state='Behandles';a.owner=who||'Deg';a.forwardAt=null;addEv(a,`Tatt av ${a.owner}`);}}
+function forward(a,arcId,auto){
+  const arc=ARCS.find(x=>x.id===arcId);if(!arc||arc.st!=='Tilkoblet'){toast('Stasjonen er ikke satt opp');return;}
+  a.state='Videresendt';a.arc={id:arcId,name:arc.name,at:t,ack:null};a.forwardAt=null;
+  addEv(a,(auto?'Ingen tok saken innen 3 min. ':'')+`Sendt til ${arc.name} (SIA DC-09)`);
+  setTimeout(()=>{a.arc.ack=t;addEv(a,`${arc.name} har kvittert. Vekter er varslet, anslått ankomst 14 min`);render();},2500);
+}
+function falseAlarm(a,reason){a.state='Avsluttet';a.result='Falsk alarm: '+reason;a.forwardAt=null;addEv(a,`Avsluttet som falsk alarm (${reason})`);}
+function closeA(a){a.state='Avsluttet';a.result='Avsluttet';a.forwardAt=null;addEv(a,'Avsluttet etter kontroll på stedet');}
+function startCalls(a){
+  a.calls=[{n:'Anleggsleder (eksempel)',s:'Ringer …'},{n:'Maskinansvarlig (eksempel)',s:'Venter'},{n:'Daglig leder (eksempel)',s:'Venter'}];
+  addEv(a,'Ringeliste startet');
+  setTimeout(()=>{a.calls[0].s='Ikke svar';a.calls[1].s='Ringer …';render();},1600);
+  setTimeout(()=>{a.calls[1].s='Svarte, er på vei';addEv(a,'Maskinansvarlig svarte og er på vei');render();},3400);
+}
+function newAlarm(){
+  const pool=[
+    {prio:1,type:'Jamming',site:'Rv 13 Stamnes',unit:'Hjullaster B',title:'Stillhet med tegn på jamming. Naboene melder at B er borte',code:'YC',zone:'00',ch:'LoRa via C og satellitt',img:null},
+    {prio:1,type:'Drivstoff',site:'Fjellsrud massetak',unit:'Traktor C',title:'Drivstoffnivå falt 8 % med motoren av (CAN)',code:'BA',zone:'12',ch:'LTE-M',img:{cam:'C1',person:true,conf:91}},
+    {prio:1,type:'Sabotasje',site:'Lager Lier',unit:'Verktøycontainer 2',title:'Dør åpnet og vibrasjon fra lås, ingen avarmering',code:'BA',zone:'05',ch:'LTE-M',img:{cam:'K1',person:true,conf:89}},
+    {prio:2,type:'Anti-masking',site:'Elvegata, Drammen',unit:'Traktor C',title:'Kamera C1 er tildekket',code:'TA',zone:'08',ch:'LTE-M',img:{cam:'C1',person:false,masked:true}},
+  ];
+  const p=pool[(nextNo)%pool.length];
+  const a={...p,id:'A-'+(nextNo++),t,state:'Ny',ev:[[t,'Alarm mottatt via '+p.ch]],calls:null,arc:null};a.forwardAt=a.prio===1?t+180:null;
+  alarms.unshift(a);selId=a.id;push=a.id;if(a.type==='Jamming'){a.forwardAt=null;setTimeout(()=>{addEv(a,'Regel: jamming med flere tause enheter sendes alltid med en gang');forward(a,ARCS[0].id);render();},800);}setTimeout(()=>{if(push===a.id){push=null;renderPhone();}},6000);render();
+}
+
+/* ---------- tegning ---------- */
+function snap(im){
+  if(!im) return `<svg viewBox="0 0 160 100" role="img" aria-label="Ingen bilde"><rect width="160" height="100" fill="#1d2125"/><text x="80" y="54" text-anchor="middle" fill="#9aa3ab" font-size="9" font-family="monospace">Ingen bilde, enheten er taus</text></svg>`;
+  let s=`<svg viewBox="0 0 160 100" role="img" aria-label="Kamerabilde fra ${im.cam}"><rect width="160" height="100" fill="#161a17"/><path d="M0 72 L160 62 L160 100 L0 100Z" fill="#262c27"/><rect x="104" y="36" width="46" height="28" fill="#2f3630"/><rect x="112" y="42" width="14" height="12" fill="#3c443d"/>`;
+  if(im.person) s+=`<circle cx="62" cy="40" r="6" fill="#cfd6cf"/><path d="M52 80 L54 51 Q62 45 70 51 L72 80 Z" fill="#cfd6cf"/><rect x="45" y="28" width="34" height="56" fill="none" stroke="#f0b03a" stroke-width="1.5"/><text x="45" y="24" fill="#f0b03a" font-size="8" font-family="monospace">PERSON ${im.conf}%</text>`;
+  if(im.masked) s+=`<rect width="160" height="100" fill="#0c0d0c" opacity=".8"/><text x="80" y="54" text-anchor="middle" fill="#f0675b" font-size="9" font-family="monospace">TILDEKKET</text>`;
+  return s+`<text x="5" y="10" fill="#e6e9ed" font-size="7.5" font-family="monospace">${im.cam} IR</text><text x="155" y="96" text-anchor="end" fill="#8fd1a8" font-size="7" font-family="monospace">SIGNERT</text></svg>`;
+}
+function mini(a){
+  return `<svg viewBox="0 0 220 120" role="img" aria-label="Kart over ${esc(a.site)}"><rect width="220" height="120" fill="var(--sunk)"/><path d="M0 104 C60 98 110 86 150 70 S200 52 220 50" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/><rect x="34" y="18" width="160" height="80" fill="none" stroke="var(--muted)" stroke-dasharray="2 4"/><rect x="62" y="50" width="22" height="13" rx="2" fill="var(--hivis)"/><rect x="118" y="30" width="22" height="13" rx="2" fill="var(--hivis)" opacity=".6"/><rect x="150" y="68" width="22" height="13" rx="2" fill="var(--hivis)" opacity=".6"/><circle cx="73" cy="56" r="20" fill="var(--crit-soft)" stroke="var(--crit)"/><text x="73" y="90" text-anchor="middle" font-size="9" fill="var(--ink)" font-family="sans-serif">${esc(a.unit.split(' (')[0])}</text></svg>`;
+}
+function sia(a){
+  const acct=a.site.startsWith('Elv')?'4471':a.site.startsWith('Fjell')?'4472':a.site.startsWith('Rv')?'4473':'4474';
+  const d='10-25-2026';
+  return `"*SIA-DCS"0${String(a.id.slice(2)).slice(-3)}L0#${acct}[|Nri1/${a.code}${a.zone}]\n[X10.2041E59.7440N][V${a.id}][Uhttps://…/bilde/${a.id}]\n_${fmt(a.t)},${d}\n(* = kryptert med AES, ${a.code} = ${({BA:'innbrudd',TA:'sabotasje',YC:'kommunikasjonsfeil',XT:'lavt batteri'})[a.code]||'hendelse'})`;
+}
+function renderStats(){
+  const o=alarms.filter(open);
+  const s=[['Nye alarmer',o.filter(a=>a.state==='Ny').length,true],['Under behandling',o.filter(a=>a.state==='Behandles').length],['Hos alarmstasjon',o.filter(a=>a.state==='Videresendt').length],['Enheter uten kontakt','1'],['Utstyr savnet','1']];
+  $('#stats').innerHTML=s.map(([l,v,h])=>`<div class="stat ${h&&v>0?'hot':''}"><b>${v}</b><span>${l}</span></div>`).join('');
+}
+function renderQueue(){
+  const list=[...alarms].sort((a,b)=>(open(b)-open(a))||(a.prio-b.prio)||(b.t-a.t));
+  $('#queue').innerHTML=list.map(a=>`<button type="button" class="qi p${a.prio} ${a.id===selId?'sel':''} ${open(a)?'':'done'}" data-sel="${a.id}"><span class="bar"></span><span class="qt">${esc(a.title)}</span><span class="pill s-${a.state} qs">${a.state}</span><span class="qm">${a.id} · ${esc(a.unit)} · ${esc(a.site)} · ${fmt(a.t)}</span>${a.forwardAt!=null&&a.state==='Ny'?`<span class="countdown">Til alarmstasjon om ${mmss(Math.max(0,a.forwardAt-t))}</span>`:''}</button>`).join('');
+}
+function renderDetail(){
+  const a=A(selId);if(!a){$('#detail').innerHTML='<p class="note">Velg en alarm.</p>';return;}
+  const evs=[...a.ev].sort((x,y)=>y[0]-x[0]);
+  $('#detail').innerHTML=`
+  <div class="detail-h"><div><div class="note">${a.id} · prioritet ${a.prio} · ${a.type}</div><h2>${esc(a.title)}</h2></div><span class="pill s-${a.state}">${a.state}${a.owner&&a.state==='Behandles'?' · '+a.owner:''}</span></div>
+  <div class="meta-row"><span class="chip">${esc(a.site)}</span><span class="chip">${esc(a.unit)}</span><span class="chip">Mottatt ${fmt(a.t)} via ${esc(a.ch)}</span><span class="chip ok">Signatur gyldig</span>${a.forwardAt!=null&&a.state==='Ny'?`<span class="chip crit">Automatisk videresending om ${mmss(Math.max(0,a.forwardAt-t))}</span>`:''}</div>
+  <div class="dgrid">
+    <div class="panel"><div class="panel-h">Bilde</div><div class="snap">${snap(a.img)}</div></div>
+    <div class="panel"><div class="panel-h">Posisjon</div><div class="mini">${mini(a)}</div></div>
+  </div>
+  <div class="dgrid">
+    <div class="panel"><div class="panel-h">Hendelser</div><ol class="tl">${evs.map(e=>`<li><time>${fmt(e[0])}</time><span>${esc(e[1])}</span></li>`).join('')}</ol></div>
+    <div class="panel"><div class="panel-h">Handling</div>
+      ${open(a)?`<div class="acts">
+        <button type="button" class="btn primary" data-act="take" ${a.state!=='Ny'?'disabled':''}>Ta saken</button>
+        <button type="button" class="btn" data-act="calls" ${a.calls?'disabled':''}>Ring kontaktliste</button>
+        <button type="button" class="btn ok" data-act="close">Avslutt</button></div>
+      <div class="arcbox"><select id="arcSel" aria-label="Alarmstasjon">${ARCS.filter(x=>x.st==='Tilkoblet').map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select><button type="button" class="btn danger" data-act="fwd" ${a.arc?'disabled':''}>Send til alarmstasjon</button></div>
+      <div class="arcbox"><select id="faSel" aria-label="Årsak"><option>Dyr</option><option>Glemte å avarmere</option><option>Vær eller vind</option><option>Test</option></select><button type="button" class="btn" data-act="false">Falsk alarm</button></div>`:`<p class="note">${esc(a.result||'Avsluttet')}</p>`}
+      ${a.calls?`<div class="sheet">${a.calls.map(c=>`<div class="callrow"><span>${c.n}</span><small>${c.s}</small></div>`).join('')}</div>`:''}
+    </div>
+  </div>
+  ${a.arc?`<div class="panel"><div class="panel-h">Melding til ${a.arc.name}</div><pre class="sia">${esc(sia(a))}</pre><p class="note">${a.arc.ack!=null?`Kvittert av stasjonen ${fmt(a.arc.ack)}. Stasjonens operatør ser bildet via sikker lenke.`:'Venter på kvittering fra stasjonen …'}</p></div>`:''}`;
+}
+function renderLower(){
+  $('#sites').innerHTML=SITES.map(s=>`<tr><td>${s.n}</td><td><span class="dot ${s.st==='Armert'?'d-ok':'d-warn'}"></span>${s.st}</td><td>${s.m}</td><td>${s.b}</td><td>${s.u}</td><td>${s.dev}</td></tr>`).join('');
+  $('#arcs').innerHTML=ARCS.map(a=>`<tr><td>${a.name}</td><td><span class="dot ${a.st==='Tilkoblet'?'d-ok':'d-off'}"></span>${a.st}${a.test?' · '+a.test:''}</td><td>${a.role}</td></tr>`).join('');
+}
+
+/* ---------- telefon ---------- */
+const MACH=[{id:'A',n:'Gravemaskin A',d:'4 m'},{id:'B',n:'Hjullaster B',d:'38 m'},{id:'C',n:'Traktor C',d:'Utenfor rekkevidde'}];
+const TAGS=[{id:'7F3A-02C1',n:'Graveskuff 1,2 m'},{id:'7F3A-02D8',n:'Planeringsskuff'},{id:'7F3A-0311',n:'Tilhenger 3,5 t'},{id:'7F3A-0342',n:'Pallegafler'},{id:'7F3A-0377',n:'Hurtigkobling'}];
+function renderPhone(){
+  $('#pclock').textContent=tab==='alarmer'?fmt(t).slice(0,5):'06:42';
+  document.querySelectorAll('#ptabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  document.querySelectorAll('#roleSeg button').forEach(b=>b.classList.toggle('on',b.dataset.role===role));
+  const B=$('#pbody');
+  if(tab==='alarmer'){
+    $('#ptitle').textContent='Alarmer';
+    if(role==='arbeider'){B.innerHTML=`<div class="acard"><div class="t">Du får ikke alarmer</div><div class="m">Bare anleggsleder og vaktansvarlig får alarmer i appen. Arbeidere bruker appen til å starte og avslutte arbeidsdagen og sjekke ut utstyr.</div></div>`;}
+    else if(appSel){const a=A(appSel);B.innerHTML=`<button type="button" class="btn sm" data-p="back">Tilbake</button><div class="acard ${open(a)?'alarm':''}"><div class="m">${a.id} · ${esc(a.site)}</div><div class="t">${esc(a.title)}</div><div class="snap">${snap(a.img)}</div><div class="m">${esc(a.unit)} · ${fmt(a.t)} · ${a.state}${a.arc?' · '+a.arc.name:''}</div>
+      ${open(a)?`<button type="button" class="btn primary wide" data-p="take" ${a.state!=='Ny'?'disabled':''}>Jeg tar saken</button><button type="button" class="btn danger wide" data-p="fwd" ${a.arc?'disabled':''}>Send vekter (${ARCS[0].name})</button><button type="button" class="btn wide" data-p="false">Falsk alarm, glemte å avarmere</button>`:`<div class="m">${esc(a.result||'')}</div>`}</div>`;}
+    else{const o=alarms.filter(open).sort((a,b)=>a.prio-b.prio||b.t-a.t);
+      B.innerHTML=(o.length?o.map(a=>`<button type="button" class="acard ${a.prio===1?'alarm':''}" style="text-align:left;font:inherit;color:inherit;cursor:pointer" data-p="open" data-id="${a.id}"><div class="m">${a.id} · prioritet ${a.prio} · ${a.state}</div><div class="t">${esc(a.title)}</div><div class="m">${esc(a.unit)} · ${esc(a.site)}</div></button>`).join(''):`<div class="acard"><div class="t">Ingen åpne alarmer</div></div>`);}
+  } else if(tab==='dag'){
+    $('#ptitle').textContent='Arbeidsdag';
+    const anyArmed=Object.values(dayState.armed).some(Boolean);
+    B.innerHTML=`<div class="bigstate ${anyArmed?'bs-armed':'bs-off'}"><b>${anyArmed?'Elvegata er armert':'Elvegata er avarmert'}</b><span>Mandag 06:42 (eksempel). Avarmering er tillatt 06:00–18:00 for innloggede på prosjektet.</span></div>
+    <div class="acard"><div class="m">Maskiner i nærheten (Bluetooth)</div>${MACH.map(m=>`<div class="mrow"><div><div class="n">${m.n}</div><div class="d">${m.d} · ${dayState.armed[m.id]?'Armert':'Avarmert'}</div></div>${dayState.armed[m.id]?`<button type="button" class="btn sm" data-p="disarm" data-m="${m.id}" ${m.d==='Utenfor rekkevidde'?'disabled':''}>Avarmer</button>`:`<span class="d">I bruk</span>`}</div>`).join('')}
+    <div class="m">Du må stå nær maskinen. Det hindrer at noen avarmerer fra et annet sted.</div></div>
+    ${role==='leder'?`<button type="button" class="btn wide" data-p="disarmAll" ${anyArmed?'':'disabled'}>Avarmer hele anlegget</button>`:''}
+    <button type="button" class="btn primary wide" data-p="endday" ${anyArmed?'disabled':''}>Avslutt arbeidsdagen og armer</button>
+    <div class="acard"><div class="m">Andre måter å avarmere på</div><div class="m">NFC-kort mot leseren i kabinen for dem uten telefon. Førerkortet kan også kreves i tillegg til appen.</div></div>`;
+  } else {
+    $('#ptitle').textContent='Utstyr';
+    B.innerHTML=`<div class="acard"><div class="m">Elvegata · 5 brikker hørt siste 2 min</div>${TAGS.map(g=>`<div class="mrow"><div><div class="n">${g.n}</div><div class="d">${g.id} · ${tagsOut[g.id]?'Sjekket ut til Prosjekt Bryggen':'På anlegget'}</div></div><button type="button" class="btn sm" data-p="nfc" data-g="${g.id}">${tagsOut[g.id]?'Sjekk inn':'Sjekk ut'}</button></div>`).join('')}</div>
+    <div class="m" style="font-size:12px;color:var(--muted)">Hold telefonen mot brikken for å sjekke ut. Utstyr som forlater anlegget uten utsjekk gir varsel til anleggsleder.</div>`;
+  }
+  let o='';
+  if(push){const a=A(push);if(a) o+=`<div class="push" data-p="pushopen" data-id="${a.id}" role="button" tabindex="0"><b>GPS Vs Tyv · Prioritet ${a.prio}</b><span>${esc(a.unit)}: ${esc(a.title)}</span></div>`;}
+  if(overlay){o+=`<div class="overlay"><div class="osheet">${overlay.html}</div></div>`;}
+  $('#pover').innerHTML=o;
+}
+function sheet(html){overlay={html};renderPhone();}
+function closeSheet(){overlay=null;renderPhone();}
+
+$('#screen').addEventListener('click',e=>{
+  const b=e.target.closest('[data-p],[data-tab],[data-role]');if(!b)return;
+  if(b.dataset.tab){tab=b.dataset.tab;appSel=null;overlay=null;renderPhone();return;}
+  if(b.dataset.role){role=b.dataset.role;appSel=null;renderPhone();return;}
+  const p=b.dataset.p,a=appSel?A(appSel):null;
+  switch(p){
+    case 'open':case 'pushopen':appSel=b.dataset.id;tab='alarmer';push=null;break;
+    case 'back':appSel=null;break;
+    case 'take':take(a,'Anleggsleder (app)');break;
+    case 'fwd':take(a,'Anleggsleder (app)');forward(a,ARCS[0].id);break;
+    case 'false':falseAlarm(a,'glemte å avarmere');break;
+    case 'disarm':{const m=MACH.find(x=>x.id===b.dataset.m);sheet(`<div class="ring">Face ID</div><b>Avarmer ${m.n}?</b><div class="m">Bekreft med Face ID eller PIN. Telefonen er ${m.d} fra maskinen.</div><button type="button" class="btn primary wide" data-p="confirm" data-m="${m.id}">Bekreft</button><button type="button" class="btn wide" data-p="cancel">Avbryt</button>`);return;}
+    case 'confirm':dayState.armed[b.dataset.m]=false;overlay=null;toast(`${MACH.find(x=>x.id===b.dataset.m).n} er avarmert`);break;
+    case 'disarmAll':sheet(`<div class="ring">Face ID</div><b>Avarmer hele Elvegata?</b><div class="m">Alle maskiner og brakker på anlegget avarmeres. Hendelsen logges med navnet ditt.</div><button type="button" class="btn primary wide" data-p="confirmAll">Bekreft</button><button type="button" class="btn wide" data-p="cancel">Avbryt</button>`);return;
+    case 'confirmAll':Object.keys(dayState.armed).forEach(k=>dayState.armed[k]=false);overlay=null;toast('Elvegata er avarmert');break;
+    case 'endday':sheet(`<b>Klar til å armere?</b><div class="m" style="text-align:left">Utstyr: 5 av 5 brikker er på anlegget<br>Gravemaskin A og hjullaster B: parkert<br>Traktor C: motoren går. Armeres når motoren stopper.<br>Brakke og verktøycontainer: dører lukket</div><button type="button" class="btn primary wide" data-p="armAll">Armer anlegget</button><button type="button" class="btn wide" data-p="cancel">Avbryt</button>`);return;
+    case 'armAll':Object.keys(dayState.armed).forEach(k=>dayState.armed[k]=true);overlay=null;toast('Elvegata er armert');break;
+    case 'nfc':{const g=TAGS.find(x=>x.id===b.dataset.g);if(tagsOut[g.id]){delete tagsOut[g.id];toast(`${g.n} er sjekket inn`);break;}sheet(`<div class="ring">NFC</div><b>Hold telefonen mot brikken</b><div class="m">${g.n} · ${g.id}</div><button type="button" class="btn primary wide" data-p="nfcok" data-g="${g.id}">Simuler at brikken er lest</button><button type="button" class="btn wide" data-p="cancel">Avbryt</button>`);return;}
+    case 'nfcok':tagsOut[b.dataset.g]=true;overlay=null;toast('Sjekket ut til Prosjekt Bryggen');break;
+    case 'cancel':overlay=null;break;
+  }
+  render();
+});
+$('#roleSeg').addEventListener('click',e=>e.stopPropagation(),true);
+
+/* ---------- dashboard-hendelser ---------- */
+$('#queue').addEventListener('click',e=>{const b=e.target.closest('[data-sel]');if(b){selId=b.dataset.sel;render();}});
+$('#detail').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=A(selId);
+  switch(b.dataset.act){case 'take':take(a);break;case 'calls':take(a);startCalls(a);break;case 'close':closeA(a);break;
+    case 'fwd':take(a);forward(a,$('#arcSel').value);break;case 'false':falseAlarm(a,$('#faSel').value);break;}
+  render();});
+$('#simBtn').addEventListener('click',newAlarm);
+$('#resetBtn').addEventListener('click',seed);
+
+function render(){$('#clock').textContent=fmt(t);renderStats();renderQueue();renderDetail();renderLower();renderPhone();}
+seed();
+setInterval(()=>{t+=1;$('#clock').textContent=fmt(t);
+  let ch=false;alarms.forEach(a=>{if(a.state==='Ny'&&a.forwardAt!=null&&t>=a.forwardAt){forward(a,ARCS[0].id,true);ch=true;}});
+  if(ch) render(); else {renderQueue();if(A(selId)&&A(selId).state==='Ny'){const c=document.querySelector('#detail .chip.crit');const a=A(selId);if(c&&a.forwardAt!=null)c.textContent=`Automatisk videresending om ${mmss(Math.max(0,a.forwardAt-t))}`;}if(tab==='alarmer')$('#pclock').textContent=fmt(t).slice(0,5);}
+},1000);
+</script>
+
+</body>
+</html>

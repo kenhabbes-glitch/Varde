@@ -1,0 +1,18 @@
+{
+  "name": "varde",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "description": "Varde – første versjon av plattform, enhetssimulator og dashboard (referanse for leverandører)",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node platform/server.ts",
+    "dev": "node platform/server.ts --dev",
+    "sim": "node simulator/sim.ts",
+    "sim:auto": "node simulator/sim.ts --auto",
+    "test": "node --test \"test/*.test.ts\"",
+    "test:fw": "make -C firmware/hovedenhet/test"
+  }
+}

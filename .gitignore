@@ -1,0 +1,7 @@
+   out.pdf
+   schem.html
+   schem.pdf
+   hi/
+   __pycache__/
+   node_modules/
+   .DS_Store

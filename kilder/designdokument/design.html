@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><title>Varde – teknisk design</title>
+<style>
+@page{size:A4;margin:20mm 18mm 20mm 18mm;
+  @bottom-left{content:"Varde · Teknisk design v0.13";font:8pt Inter;color:#6b7078}
+  @bottom-right{content:"Side " counter(page) " av " counter(pages);font:8pt Inter;color:#6b7078}}
+@page:first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}
+:root{--ink:#1c2127;--muted:#5d646d;--line:#d4d6d0;--hv:#e2a019;--hvk:#5c4000;--crit:#b8352b;--ok:#2b7a50;--radio:#23788a;--tint:#f3f3ef}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,"DejaVu Sans",sans-serif;font-size:9.6pt;line-height:1.5;color:var(--ink)}
+h1,h2,h3{font-family:"Inter Display",Inter,sans-serif;line-height:1.2;margin:0}
+h2{font-size:17pt;font-weight:700;margin:0 0 3mm;padding-top:2mm;break-after:avoid}
+h2 .n{color:var(--hv);margin-right:3mm}
+h3{font-size:11.5pt;font-weight:650;margin:5mm 0 1.5mm;break-after:avoid}
+p{margin:0 0 2.4mm;max-width:165mm}
+ul,ol{margin:0 0 3mm;padding-left:5mm}
+li{margin:0 0 1mm}
+section{break-before:page}
+section.cont{break-before:auto;margin-top:8mm}
+table{width:100%;border-collapse:collapse;margin:1mm 0 4mm;font-size:8.6pt;break-inside:auto}
+th{text-align:left;font-weight:600;border-bottom:1.2pt solid var(--ink);padding:1.4mm 2mm 1.4mm 0;vertical-align:bottom}
+td{border-bottom:.5pt solid var(--line);padding:1.3mm 2mm 1.3mm 0;vertical-align:top}
+tr{break-inside:avoid}
+td.mono,code{font-family:"DejaVu Sans Mono",monospace;font-size:8pt}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig{margin:2mm 0 4mm;break-inside:avoid}
+.fig svg{width:100%;height:auto;display:block}
+.cap{font-size:8pt;color:var(--muted);margin-top:1.5mm}
+.note{border-left:3pt solid var(--hv);background:var(--tint);padding:2.5mm 4mm;margin:2mm 0 4mm;break-inside:avoid}
+.note b{display:block;margin-bottom:.5mm}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+/* forside */
+.cover{height:297mm;padding:26mm 22mm;display:flex;flex-direction:column;justify-content:space-between;background:#1a1f25;color:#eef0f2;break-after:page}
+.stripe{height:7mm;width:60mm;background:repeating-linear-gradient(135deg,#e2a019 0 5mm,#1a1f25 5mm 10mm)}
+.cover .eyebrow{font:600 9pt Inter;letter-spacing:1.6pt;text-transform:uppercase;color:#e2a019;margin-top:10mm}
+.cover h1{font-size:46pt;font-weight:800;margin-top:4mm;letter-spacing:-.5pt}
+.cover .sub{font-size:15pt;color:#c4c9cf;margin-top:4mm;max-width:140mm}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:1.5mm 8mm;font-size:9.5pt;color:#c4c9cf}
+.meta b{color:#eef0f2;font-weight:600}
+.toc{columns:3;column-gap:8mm;font-size:9pt;margin-top:6mm}
+.toc div{break-inside:avoid;padding:1mm 0;border-bottom:.5pt solid #3a414a}
+.toc span{color:#e2a019;display:inline-block;width:8mm}
+.lead{font-size:11pt;line-height:1.5;max-width:165mm}
+.kv{display:grid;grid-template-columns:38mm 1fr;gap:1.2mm 4mm;font-size:9pt;margin:2mm 0 4mm}
+.kv div:nth-child(odd){color:var(--muted)}
+</style></head><body>
+
+<div class="cover">
+  <div>
+    <div class="stripe"></div>
+    <div class="eyebrow">Teknisk design · prosjekt GPS Vs Tyv</div>
+    <h1>Varde</h1>
+    <div class="sub">Alarmenhet som beskytter GPS-utstyr for maskinstyring på gravemaskiner, traktorer og andre anleggsmaskiner mot tyveri og sabotasje, med brikker for utstyr uten strøm, sikring av brakker og containere, og alarmmottak i eget dashboard, app og hos alarmstasjoner.</div>
+    <div class="toc">
+      <div><span>1</span>Sammendrag</div><div><span>2</span>Bakgrunn og krav</div><div><span>3</span>Systemarkitektur</div><div><span>4</span>Sensorer og deteksjon</div><div><span>5</span>Kommunikasjon og jamming</div><div><span>6</span>Heartbeat og mottakssentral</div><div><span>7</span>Gruppealarm</div><div><span>8</span>Miljø og falske alarmer</div><div><span>9</span>Sabotasjesikring</div><div><span>10</span>Maskinvare v1</div><div><span>11</span>Kamerasystem</div><div><span>12</span>CAN-buss</div><div><span>13</span>Utstyrsbrikker</div><div><span>14</span>Sensorbuss og utvidelsesboks</div><div><span>15</span>Brakker og containere</div><div><span>16</span>Detaljdesign per enhet</div><div><span>17</span>Plattform, dashboard og app</div><div><span>18</span>Avarmering</div><div><span>19</span>Alarmstasjoner</div><div><span>20</span>Programvare og oppsett</div><div><span>21</span>Marked og hyllevare</div><div><span>22</span>Komponentliste</div><div><span>23</span>Kostnadskalkyle</div><div><span>24</span>Demo og prototyper</div><div><span>25</span>Åpne punkter og neste steg</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div>Versjon</div><b>0.13 – utkast, produktnavn Varde</b>
+    <div>Dato</div><b>25. oktober 2026</b>
+    <div>Utarbeidet av</div><b>Kenneth Habbestad</b>
+    <div>Status</div><b>Konsept. Ikke kontrollert mot datablad, ikke klart for produksjon.</b>
+  </div>
+</div>
+
+<section style="break-before:auto">
+<h2><span class="n">1</span>Sammendrag</h2>
+<p class="lead">Enheten monteres på anleggsmaskinen, overvåker maskinen og GPS-utstyret med flere sensorer og sender en signert heartbeat til en mottakssentral. Grunnprinsippet er at stillhet utløser alarm: jamming, strømkutt og fjerning av enheten gir alarm fordi enheten slutter å melde seg.</p>
+<div class="kv">
+  <div>Produktnavn</div><div>Varde. Vardene var Norges varslingskjede: når én ble tent, tente den neste, slik gruppealarmen virker mellom maskinene. «GPS Vs Tyv» er prosjektnavnet. Navnet må sjekkes mot varemerker og domener før lansering</div>
+  <div>Prosessor og mobilnett</div><div>Nordic nRF9151 SiP: Arm Cortex-M33, LTE-M/NB-IoT og satellitt (NTN)</div>
+  <div>Lokal radio</div><div>LoRa 868 MHz (SX1262) for gruppealarm mellom maskiner</div>
+  <div>Sensorer</div><div>60 GHz-radar (Acconeer A121), IMU, MEMS-mikrofon, lyssensor, GNSS med jamming-deteksjon</div>
+  <div>Sabotasjesikring</div><div>Tamperfolie, lokk- og veggbryter, deteksjon av kuttet antenne, kabelsløyfe rundt GPS-utstyret, strømbruddsdeteksjon</div>
+  <div>Strøm</div><div>12/24 V fra maskinen, reservebatteri med power path</div>
+  <div>Kamera</div><div>Små kamerapods med egen persongjenkjenning, IR-lys og anti-masking, koblet til en kamerahub som plugges på hovedenheten</div>
+  <div>Maskindata</div><div>Lytter på maskinens CAN-buss (J1939/ISOBUS): tenning, turtall, drivstoff og GPS-utstyrets meldinger</div>
+  <div>Utstyr uten strøm</div><div>Små Bluetooth-brikker med byttbart batteri og egen ID på skuffer, koblinger og hengere. Maskinene er gateways</div>
+  <div>Falske alarmer</div><div>Kjernesone og ytre sone, poeng fra flere sensorer, miljøprofiler for skog, landlig og by satt per maskin, læremodus og kontroll mellom maskinene</div>
+  <div>Utvidelse</div><div>Felles sensorbuss (CAN FD, M12) og utvidelsesboks med innganger for vanlige alarmsensorer</div>
+  <div>Bygg</div><div>Stasjonær variant for brakker og verktøycontainere, med 230 V, batteri eller solcelle</div>
+  <div>Alarmmottak</div><div>Eget dashboard og app for bedriften, og videresending til alarmstasjoner med SIA DC-09</div>
+  <div>Avarmering</div><div>Appen med Bluetooth-nærhet og biometri, NFC-kort som reserve</div>
+  <div>Geofence</div><div>Elektronisk gjerde per anlegg. Forlater maskinen anlegget når den er armert, gir det alarm. I arbeidstid bare forvarsel. Enheten har en kopi av gjerdet og merker utkjøring selv om mobilnettet er jammet</div>
+  <div>Programvare</div><div>Fastvare i alle enheter, plattform, dashboard og app, oppsett med app og oppdatering over luft. Grovt anslag 88–151 månedsverk, kjøpes inn i tre faser</div>
+  <div>Kostnad</div><div>Tre veier i kapittel 23: egenutviklet ca. 20–42 mill. kr i engangskost, hyllevare ca. 3,5–8 mill., mellomløsning ca. 12–26 mill. Alarmstasjon er valgfritt for kunden</div>
+  <div>Komponentkost (anslag)</div><div>Hovedenhet ca. 1 250–2 300 kr. Komplett per maskin med kamerahub og to kamerapods ca. 2 350–4 400 kr, CAN og gateway ca. 190–350 kr i tillegg, utstyrsbrikke ca. 150–275 kr, i små serier</div>
+</div>
+<div class="note"><b>Status for dokumentet</b>Dokumentet samler konseptet og designgrunnlaget så langt. Pinnetilordningen for nRF9151 og forsyningskravene til A121 er kontrollert mot produsentenes dokumentasjon. Øvrige komponentdata, priser og regelverksgrenser må verifiseres før skjema og layout tegnes.</div>
+
+<section class="cont">
+<h2><span class="n">2</span>Bakgrunn og krav</h2>
+<p>GPS-utstyr for maskinstyring (mottakere, antenner og skjermer fra blant andre Trimble, Leica og Topcon) er verdifullt, lett å demontere og et ettertraktet tyvemål. Tyvene er sofistikerte og bruker blant annet jammere for å stoppe sporingsenheter. Systemet må derfor tåle at angriperen kjenner til at det finnes.</p>
+<h3>Funksjonelle krav</h3>
+<ul>
+<li>Oppdage menneske nær maskinen og skille det fra dyr.</li>
+<li>Oppdage sabotasje: jamming, strømbrudd, åpnet kapsling, kuttet antenne og demontering av GPS-utstyr.</li>
+<li>Sende heartbeat og alarmer til en mottakssentral, med reservekanaler når mobilnettet er blokkert.</li>
+<li>Varsle nabomaskiner og la dem øke beredskapen.</li>
+<li>Skille fører fra tyv, slik at systemet ikke gir falske alarmer i arbeidstiden.</li>
+<li>Sikre brakker og verktøycontainere, og holde oversikt over utstyr uten strøm.</li>
+</ul>
+<h3>Ikke-funksjonelle krav</h3>
+<ul>
+<li>Enkel montering, rimelig pris og lavt strømforbruk.</li>
+<li>Tåle anleggsmiljø: vibrasjon, fukt (IP67), kulde og spenningstopper fra maskinens strømnett.</li>
+<li>Så sabotasjesikker som mulig, både fysisk og kryptografisk.</li>
+<li>Innebygd eller ekstern antenne etter monteringssted.</li>
+<li>Mulig å koble til flere sensorer ved behov.</li>
+<li>Alarmer kan håndteres av bedriften selv og sendes til alarmstasjoner.</li>
+</ul>
+</section>
+</section>
+
+<section class="cont">
+<h2><span class="n">3</span>Systemarkitektur</h2>
+<p>Systemet har tre lag: sensorer, en forseglet hovedenhet og flere uavhengige radiokanaler. Mottakssentralen holder en klokke for hver enhet og reagerer når den ikke hører noe. Nabomaskiner på samme anlegg danner et lokalt LoRa-nett og passer på hverandre.</p>
+<div class="fig">
+<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<g font-size="11">
+<rect x="20" y="10" width="640" height="100" rx="10" fill="#e8f3ef" stroke="#2b7a50" stroke-width=".8"/><text x="36" y="32" font-weight="700" font-size="13" fill="#1c2127">Sensorer</text>
+<g fill="#fff" stroke="#9aa0a6" stroke-width=".7"><rect x="36" y="42" width="140" height="52" rx="6"/><rect x="190" y="42" width="140" height="52" rx="6"/><rect x="344" y="42" width="140" height="52" rx="6"/><rect x="498" y="42" width="146" height="52" rx="6"/></g>
+<g text-anchor="middle"><text x="106" y="64" font-weight="600" font-size="12">Radar 60 GHz</text><text x="106" y="81" fill="#5d646d">Menneske vs dyr</text>
+<text x="260" y="64" font-weight="600" font-size="12">Seismikk / IMU</text><text x="260" y="81" fill="#5d646d">Vibrasjon, flytting</text>
+<text x="414" y="64" font-weight="600" font-size="12">Lyd / glass</text><text x="414" y="81" fill="#5d646d">Glassbrudd, kutt</text>
+<text x="571" y="64" font-weight="600" font-size="12">Kamerapods + IR</text><text x="571" y="81" fill="#5d646d">AI, anti-masking</text></g>
+<line x1="340" y1="112" x2="340" y2="140" stroke="#5d646d" marker-end="url(#a)"/>
+<rect x="20" y="144" width="640" height="110" rx="10" fill="#efeefc" stroke="#534ab7" stroke-width=".8"/><text x="36" y="166" font-weight="700" font-size="13">Hovedenhet (forseglet kapsling)</text>
+<g fill="#fff" stroke="#9aa0a6" stroke-width=".7"><rect x="36" y="178" width="140" height="56" rx="6"/><rect x="190" y="178" width="140" height="56" rx="6"/><rect x="344" y="178" width="140" height="56" rx="6"/><rect x="498" y="178" width="146" height="56" rx="6"/></g>
+<g text-anchor="middle"><text x="106" y="201" font-weight="600" font-size="12">MCU + edge-AI</text><text x="106" y="218" fill="#5d646d">Sensorfusjon</text>
+<text x="260" y="201" font-weight="600" font-size="12">Sikkerhetsbrikke</text><text x="260" y="218" fill="#5d646d">Signert heartbeat</text>
+<text x="414" y="201" font-weight="600" font-size="12">Strøm</text><text x="414" y="218" fill="#5d646d">Batteri + buffer</text>
+<text x="571" y="201" font-weight="600" font-size="12">Tamper</text><text x="571" y="218" fill="#5d646d">Folie, lys, kabler</text></g>
+<line x1="340" y1="256" x2="340" y2="284" stroke="#5d646d" marker-end="url(#a)"/>
+<rect x="20" y="288" width="640" height="100" rx="10" fill="#fbede7" stroke="#993c1d" stroke-width=".8"/><text x="36" y="310" font-weight="700" font-size="13">Kommunikasjon</text>
+<g fill="#fff" stroke="#9aa0a6" stroke-width=".7"><rect x="36" y="320" width="140" height="52" rx="6"/><rect x="190" y="320" width="140" height="52" rx="6"/><rect x="344" y="320" width="140" height="52" rx="6"/><rect x="498" y="320" width="146" height="52" rx="6"/></g>
+<g text-anchor="middle"><text x="106" y="342" font-weight="600" font-size="12">LTE-M / NB-IoT</text><text x="106" y="359" fill="#5d646d">Primær kanal</text>
+<text x="260" y="342" font-weight="600" font-size="12">Satellitt (NTN)</text><text x="260" y="359" fill="#5d646d">Reserve</text>
+<text x="414" y="342" font-weight="600" font-size="12">LoRa 868 MHz</text><text x="414" y="359" fill="#5d646d">Mesh til naboer</text>
+<text x="571" y="342" font-weight="600" font-size="12">GNSS</text><text x="571" y="359" fill="#5d646d">Posisjon, jamming</text></g>
+<line x1="183" y1="390" x2="183" y2="416" stroke="#5d646d" marker-end="url(#a)"/><line x1="414" y1="390" x2="414" y2="416" stroke="#5d646d" marker-end="url(#a)"/>
+<rect x="36" y="420" width="294" height="44" rx="6" fill="#fff" stroke="#1c2127" stroke-width=".9"/><text x="183" y="440" text-anchor="middle" font-weight="600" font-size="12">Mottakssentral</text><text x="183" y="455" text-anchor="middle" fill="#5d646d">Heartbeat, alarmer, bilder</text>
+<rect x="344" y="420" width="300" height="44" rx="6" fill="#fff" stroke="#1c2127" stroke-width=".9"/><text x="494" y="440" text-anchor="middle" font-weight="600" font-size="12">Nabomaskiner</text><text x="494" y="455" text-anchor="middle" fill="#5d646d">Felles aktivering</text>
+</g></svg>
+<div class="cap">Figur 1. Overordnet systemskisse. Kamerapodene kobles til en kamerahub i hovedenheten (kapittel 11).</div>
+</div>
+<h3>Designprinsipper</h3>
+<ul>
+<li><b>Stillhet er en alarm.</b> Sentralen alarmerer når forventet heartbeat uteblir, uansett årsak.</li>
+<li><b>Lagdelt deteksjon.</b> Billige og strømgjerrige sensorer våker hele tiden og vekker de dyrere. En alarm krever normalt to uavhengige indikasjoner.</li>
+<li><b>Flere radiokanaler på ulike frekvensbånd.</b> En jammer som stopper mobilnettet stopper ikke nødvendigvis LoRa.</li>
+<li><b>Ferdigsertifiserte radiomoduler.</b> Lavere risiko og kostnad ved CE/RED-godkjenning.</li>
+<li><b>Kryptografisk tillit.</b> Alle meldinger signeres i en sikkerhetsbrikke og har teller mot replay.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">4</span>Sensorer og deteksjon</h2>
+<p>Sensorene står i lag, og hovedprosessoren gjør sensorfusjon for å holde falske alarmer nede. Radar og IMU står alltid på med lavt forbruk. Mikrofon og kamera aktiveres når en annen sensor har reagert.</p>
+<table>
+<tr><th style="width:18%">Sensor</th><th style="width:22%">Komponent (forslag)</th><th>Hva den oppdager</th><th style="width:22%">Drift</th></tr>
+<tr><td>Radar 60 GHz</td><td>Acconeer A121 (alt. Infineon BGT60TR13C)</td><td>Bevegelse, avstand og pustemønster. Skiller menneske fra dyr ut fra høyde, gange og fart. Ser gjennom plast og regn.</td><td>Primærsensor, korte målinger. Ca. 75 mA under måling.</td></tr>
+<tr><td>IMU / seismikk</td><td>ST LSM6DSV16X</td><td>Vibrasjon fra fottrinn og verktøy, flytting og vipping av enheten eller kabinen.</td><td>Alltid på. Innebygd maskinlæring vekker prosessoren.</td></tr>
+<tr><td>Lyd</td><td>Infineon IM69D130 (PDM)</td><td>Glassbrudd, vinkelsliper og boltekutter. Analyseres lokalt, ingen opptak av samtaler.</td><td>Slås på ved forvarsel.</td></tr>
+<tr><td>Lys</td><td>TI OPT3001</td><td>Lys inne i kapslingen, altså at lokket er åpnet.</td><td>Alltid på, avbrudd ved terskel.</td></tr>
+<tr><td>GNSS</td><td>u-blox MAX-M10S</td><td>Posisjon, flytting, og indikasjon på GPS-jamming og spoofing.</td><td>Periodisk, oftere ved alarm.</td></tr>
+<tr><td>Kamerapod + IR</td><td>Himax WiseEye2 + HM0360, 940 nm IR</td><td>Gjenkjenner personer i bildet, sender signerte bilder, oppdager tildekking, blending og flytting.</td><td>Dvale med bevegelsesdeteksjon, ca. 1–3 mW. Av når avarmert.</td></tr>
+</table>
+<h3>Alarmlogikk på enheten</h3>
+<table>
+<tr><th style="width:26%">Lokal tilstand</th><th>Utløses av</th><th style="width:34%">Hva enheten gjør</th></tr>
+<tr><td>Vakt</td><td>Armert og parkert, ingen aktivitet</td><td>Heartbeat ca. hvert 2. minutt</td></tr>
+<tr><td>Beredskap</td><td>Vekkemelding fra nabo, eller vibrasjon uten person på radar</td><td>Større radarsone, heartbeat hvert 30. sekund</td></tr>
+<tr><td>Forvarsel</td><td>Radaren ser et menneske</td><td>Vekker naboer, sender forvarsel, høy følsomhet</td></tr>
+<tr><td>Alarm</td><td>Krav avhenger av miljøprofil (kapittel 8): fra radar og kamera i skog til person ved maskinen og to fysiske tegn i by. Entydig sabotasje gir alltid alarm.</td><td>Sirene og blinklys, alarm til sentralen, vekker naboer</td></tr>
+</table>
+<p>Avarmert enhet (fører logget inn) logger sensorhendelser uten å alarmere. Sabotasje på selve enheten gir alarm også når den er avarmert.</p>
+</section>
+
+<section>
+<h2><span class="n">5</span>Kommunikasjon og jamming</h2>
+<p>Enheten prøver kanalene i fast rekkefølge. Hver radio har ekstern antenne og intern reserveantenne med RF-bryter imellom.</p>
+<table>
+<tr><th style="width:20%">Kanal</th><th style="width:24%">Komponent</th><th>Rolle</th></tr>
+<tr><td>LTE-M / NB-IoT</td><td>nRF9151 (innebygd modem)</td><td>Primær kanal for heartbeat, alarmer og kvitteringer. Billig og strømgjerrig.</td></tr>
+<tr><td>Satellitt (NTN)</td><td>nRF9151, sertifisert mot Skylo</td><td>Reserve når mobilnettet mangler eller er blokkert. Samme antenne som LTE.</td></tr>
+<tr><td>LoRa 868 MHz</td><td>SX1262-modul</td><td>Lokalt nett mellom maskiner. Videresender alarmer for en jammet nabo.</td></tr>
+<tr><td>Lagring lokalt</td><td>64 Mbit flash</td><td>Alt lagres når ingen kanal virker, og sendes når forbindelsen er tilbake.</td></tr>
+</table>
+<h3>Jamming-deteksjon</h3>
+<p>Modemet rapporterer signalstyrke (RSRP), kvalitet (RSRQ) og støynivå. Hvis alle bånd forsvinner samtidig som støygulvet stiger, tolkes det som jamming. GNSS-mottakeren melder jamming og spoofing separat. Ved jamming bytter enheten kanal, lagrer alt lokalt og kan utløse sirenen.</p>
+<table>
+<tr><th style="width:28%">Angrep</th><th>Konsekvens</th><th style="width:36%">Systemets svar</th></tr>
+<tr><td>Mobil- og GPS-jammer</td><td>LTE, satellitt og GNSS blokkert. LoRa virker.</td><td>Heartbeat og alarm via LoRa til nabo, som sender videre.</td></tr>
+<tr><td>Bredbåndsjammer</td><td>Alle kanaler blokkert for enheten.</td><td>Lokal sirene. Naboer melder at enheten er borte. Sentralen alarmerer på stillhet.</td></tr>
+<tr><td>Faraday-pose eller nedgraving</td><td>Ingen signal ut.</td><td>Lys- og bevegelsessensor gir alarm før. Stillhet gir alarm i sentralen.</td></tr>
+<tr><td>Kuttet antennekabel</td><td>Ekstern antenne borte.</td><td>DC-sløyfe oppdager bruddet, bytter til intern antenne og alarmerer.</td></tr>
+</table>
+<h3>Frekvenser og regelverk</h3>
+<p>LoRa på 868 MHz er lisensfritt, men har begrenset sendetid (typisk 1 %). Delbåndet 869,4–869,65 MHz tillater høyere effekt og 10 % sendetid og egner seg for alarmmeldinger. Andre lisensfrie bånd er 433 og 169 MHz. Egne VHF/UHF-frekvenser krever lisens fra Nkom. Grensene må bekreftes mot gjeldende norsk forskrift.</p>
+</section>
+
+<section>
+<h2><span class="n">6</span>Heartbeat og mottakssentral</h2>
+<p>Hver heartbeat er under 100 byte og inneholder enhets-ID, teller, tidsstempel, status (spenning, batteri, temperatur, tamper-flagg), radiodata (signalstyrke, støy, kanal), posisjon og signatur. Sentralen godtar bare meldinger med gyldig signatur og en teller som er høyere enn forrige.</p>
+<div class="fig">
+<svg viewBox="0 0 680 190" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker><marker id="br" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b8352b"/></marker></defs>
+<rect x="20" y="20" width="140" height="56" rx="7" fill="#e8f3ef" stroke="#2b7a50"/><text x="90" y="44" text-anchor="middle" font-weight="650" font-size="12.5">Normal</text><text x="90" y="62" text-anchor="middle" fill="#5d646d">Signert, i tide</text>
+<rect x="190" y="20" width="140" height="56" rx="7" fill="#fbf1dd" stroke="#b86e00"/><text x="260" y="44" text-anchor="middle" font-weight="650" font-size="12.5">Forsinket</text><text x="260" y="62" text-anchor="middle" fill="#5d646d">1 melding mangler</text>
+<rect x="360" y="20" width="140" height="56" rx="7" fill="#fbf1dd" stroke="#b86e00" stroke-width="1.8"/><text x="430" y="44" text-anchor="middle" font-weight="650" font-size="12.5">Mistenkelig</text><text x="430" y="62" text-anchor="middle" fill="#5d646d">+ tegn til jamming</text>
+<rect x="530" y="20" width="130" height="56" rx="7" fill="#f8e3e1" stroke="#b8352b"/><text x="595" y="44" text-anchor="middle" font-weight="650" font-size="12.5">Alarm</text><text x="595" y="62" text-anchor="middle" fill="#5d646d">Vekter varsles</text>
+<g stroke="#5d646d"><line x1="162" y1="48" x2="186" y2="48" marker-end="url(#b)"/><line x1="332" y1="48" x2="356" y2="48" marker-end="url(#b)"/><line x1="502" y1="48" x2="526" y2="48" marker-end="url(#b)"/></g>
+<rect x="20" y="118" width="440" height="40" rx="7" fill="#f8e3e1" stroke="#b8352b"/><text x="240" y="142" text-anchor="middle" font-weight="600" font-size="12">Tamper, strømbrudd eller feil signatur</text>
+<path d="M462 138H595V80" fill="none" stroke="#b8352b" marker-end="url(#br)"/>
+<text x="20" y="182" fill="#5d646d">Nederste rad går rett til alarm. Gyldig heartbeat fra «Forsinket» eller «Mistenkelig» gir «Normal» igjen.</text>
+</svg>
+<div class="cap">Figur 2. Tilstander for hver enhet i mottakssentralen.</div>
+</div>
+<h3>Intervaller</h3>
+<table>
+<tr><th>Situasjon</th><th class="num">Intervall</th><th>Merknad</th></tr>
+<tr><td>Maskinen i bruk (fører pålogget)</td><td class="num">ca. 15 min</td><td>Tyveri lite sannsynlig</td></tr>
+<tr><td>Parkert og armert</td><td class="num">2–5 min</td><td>Normal vakt</td></tr>
+<tr><td>Forhøyet beredskap</td><td class="num">30 s</td><td>Radar ser noen, eller nabo har alarm</td></tr>
+</table>
+<p>Intervallet har tilfeldig variasjon (±20 %), slik at en tyv ikke kan vente til rett etter en heartbeat og så jamme. Med 2 minutters intervall og alarm etter to tapte meldinger blir verste deteksjonstid rundt 5 minutter. Med tegn på jamming (støy meldt før stillhet, eller naboer som melder enheten borte) eskalerer sentralen raskere.</p>
+<h3>Toveis kvittering</h3>
+<p>Sentralen svarer med en signert kvittering. Uteblir den, eskalerer enheten selv: satellitt, LoRa via nabo og lokal lagring. Kvitteringen kan også bære kommandoer, for eksempel «øk følsomhet», «send bilde» eller «slå av sirene».</p>
+<h3>Armering og avarmering</h3>
+<ul>
+<li>Automatisk armering når tenningen er av og ingen har vært ved maskinen på en stund, eventuelt etter tidsplan.</li>
+<li>Avarmering med signert NFC-førerkort eller app, gjerne begrenset til arbeidstid og riktig anlegg.</li>
+<li>Motorstart uten gyldig avarmering, eller flytting om natten, gir alarm.</li>
+</ul>
+<h3>Sentralens oppbygging</h3>
+<ul>
+<li><b>Mottak:</b> MQTT eller CoAP over kryptert forbindelse, i tillegg til satellittoperatørens tjeneste.</li>
+<li><b>Regelmotor:</b> én timer per enhet, tilstandene i figur 2 og sammenstilling av signaler fra gruppen.</li>
+<li><b>Operatørvisning:</b> kart, tilstand, bilder og kvittering av alarmer.</li>
+<li><b>Logg og bevis:</b> alle meldinger lagres med tidsstempel og signatur som dokumentasjon for politi og forsikring.</li>
+<li><b>Videresending:</b> i stedet for egen 24/7-bemanning kan ferdig vurderte alarmer sendes til et vaktselskap via SIA DC-09.</li>
+</ul>
+</section>
+
+<section class="cont">
+<h2><span class="n">7</span>Gruppealarm</h2>
+<p>Maskiner på samme anlegg passer på hverandre over LoRa. Én enhet kan tauses av en jammer, men det er mye vanskeligere å tause flere enheter spredt over et område.</p>
+<div class="fig">
+<svg viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker><marker id="co" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d85a30"/></marker></defs>
+<circle cx="140" cy="130" r="105" fill="#f8e3e1" fill-opacity=".5" stroke="#b8352b" stroke-dasharray="4 4"/>
+<text x="140" y="256" text-anchor="middle" fill="#5d646d">Jammerens rekkevidde</text>
+<rect x="80" y="102" width="120" height="56" rx="7" fill="#fbede7" stroke="#d85a30"/><text x="140" y="126" text-anchor="middle" font-weight="650" font-size="12.5">Maskin A</text><text x="140" y="143" text-anchor="middle" fill="#5d646d">Oppdager tyv</text>
+<rect x="320" y="50" width="130" height="56" rx="7" fill="#e3f2f4" stroke="#23788a"/><text x="385" y="74" text-anchor="middle" font-weight="650" font-size="12.5">Maskin B</text><text x="385" y="91" text-anchor="middle" fill="#5d646d">Beredskap</text>
+<rect x="320" y="160" width="130" height="56" rx="7" fill="#e3f2f4" stroke="#23788a"/><text x="385" y="184" text-anchor="middle" font-weight="650" font-size="12.5">Maskin C</text><text x="385" y="201" text-anchor="middle" fill="#5d646d">Beredskap</text>
+<rect x="520" y="105" width="140" height="56" rx="7" fill="#fff" stroke="#1c2127"/><text x="590" y="129" text-anchor="middle" font-weight="650" font-size="12.5">Sentral</text><text x="590" y="146" text-anchor="middle" fill="#5d646d">Får alarmen</text>
+<g stroke="#d85a30" stroke-width="1.5" stroke-dasharray="5 4"><line x1="202" y1="120" x2="316" y2="84" marker-end="url(#co)"/><line x1="202" y1="142" x2="316" y2="184" marker-end="url(#co)"/></g>
+<g stroke="#5d646d" stroke-width="1.2"><line x1="452" y1="82" x2="516" y2="122" marker-end="url(#c)"/><line x1="452" y1="186" x2="516" y2="146" marker-end="url(#c)"/></g>
+<text x="680" y="20" text-anchor="end" fill="#5d646d">Stiplet = LoRa 868 MHz · hel = LTE-M / satellitt</text>
+</svg>
+<div class="cap">Figur 3. A står inne i jammerens rekkevidde. B og C står utenfor og sender alarmen videre.</div>
+</div>
+<h3>Slik virker det</h3>
+<ul>
+<li><b>Gruppedannelse:</b> sentralen deler ut gruppenøkkel for anlegget, eller enhetene grupperer seg automatisk ut fra GNSS-posisjon. Ingen fast «sjef» som kan slås ut.</li>
+<li><b>Lokal heartbeat:</b> hver enhet sender en kort LoRa-melding hvert 30.–60. sekund med status, signalstyrke og målt støy. Radioen lytter i korte glimt (channel activity detection).</li>
+<li><b>Forvarsel:</b> radaren på A ser et menneske, og A sender vekkemelding. Naboene øker følsomheten og begynner å logge.</li>
+<li><b>Bekreftet alarm:</b> A sender selv hvis den kan. Naboene videresender, og den med best forbindelse til sentralen tar jobben.</li>
+<li><b>Taus nabo:</b> uteblir heartbeat fra A samtidig som støyen stiger hos B og C, melder de at A er borte og at det er tegn på jamming. Sammenligning av støynivå gir grovt anslag på hvor jammeren står.</li>
+</ul>
+<h3>Sikkerhet i gruppen</h3>
+<ul>
+<li>Alle meldinger signeres med gruppenøkkelen og har teller og tidsstempel.</li>
+<li>Vekkemeldinger gir bare økt beredskap. Full alarm krever at sensorene på minst én enhet bekrefter. Det hindrer at en tyv tømmer batterier eller sliter ut vekterne med falske alarmer.</li>
+<li>Gjentatte, uforklarlige vekkemeldinger rapporteres som en mistenkelig hendelse.</li>
+</ul>
+<p>Begrensning: en kraftig bredbåndsjammer midt på anlegget kan tause alle samtidig. Da er det heartbeat-logikken i sentralen som gir alarmen. En fast node på anleggsbrakka med nettstrøm, bedre antenne og sirene styrker gruppen.</p>
+</section>
+
+<section>
+<h2><span class="n">8</span>Ulike miljøer og falske alarmer</h2>
+<p class="lead">Enhetene skal virke like godt i skogen langt fra folk som i Oslo sentrum en travel lørdagskveld. Hovedgrepet er at alarmen utløses av at noen gjør noe med maskinen, ikke av at noen er i nærheten. Folk som går forbi, klatrer ikke opp, åpner ikke kabinen og kutter ikke kabler.</p>
+<div class="fig">
+<svg viewBox="0 0 680 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<circle cx="170" cy="115" r="100" fill="#e3f2f4" stroke="#23788a" stroke-dasharray="4 4"/>
+<circle cx="170" cy="115" r="46" fill="#fbede7" stroke="#d85a30"/>
+<rect x="146" y="103" width="48" height="24" rx="3" fill="#e2a019" stroke="#5c4000"/>
+<text x="170" y="119" text-anchor="middle" font-weight="700" font-size="11" fill="#5c4000">Maskin</text>
+<text x="170" y="158" text-anchor="middle" fill="#993c1d" font-weight="600">Kjernesone</text>
+<text x="170" y="34" text-anchor="middle" fill="#23788a" font-weight="600">Ytre sone</text>
+<g fill="#9aa0a6"><circle cx="40" cy="200" r="4"/><circle cx="62" cy="206" r="4"/><circle cx="290" cy="40" r="4"/><circle cx="252" cy="196" r="4"/></g>
+<text x="330" y="44" font-weight="700" font-size="12">Ytre sone</text>
+<text x="330" y="62" fill="#5d646d">Personer som går forbi eller stopper. Gir aldri alarm alene,</text>
+<text x="330" y="78" fill="#5d646d">bare logg eller forvarsel etter miljøprofil. Fortau og vei kan</text>
+<text x="330" y="94" fill="#5d646d">maskeres bort i kameraet.</text>
+<text x="330" y="128" font-weight="700" font-size="12">Kjernesone</text>
+<text x="330" y="146" fill="#5d646d">På og helt inntil maskinen: kabin, belter, GPS-mast.</text>
+<text x="330" y="162" fill="#5d646d">Alarm krever person her pluss fysiske tegn, som vibrasjon,</text>
+<text x="330" y="178" fill="#5d646d">lyd, dør eller CAN-aktivitet.</text>
+<text x="330" y="208" font-weight="600" fill="#b8352b">Entydig sabotasje gir alltid alarm, uansett sone og miljø.</text>
+</svg>
+<div class="cap">Figur 4. To soner rundt maskinen.</div>
+</div>
+<h3>Poeng fra flere sensorer</h3>
+<p>Hver sensor gir poeng innenfor et kort tidsvindu: radar for avstand og hvor lenge personen blir, kamera for persongjenkjenning, IMU for vibrasjon i maskinen, mikrofon for verktøylyd og CAN for at maskinen brukes. Alarm utløses først når summen passerer terskelen for miljøprofilen. En enkelt sensor kan nesten aldri gi alarm alene.</p>
+<p>Unntaket er entydig sabotasje, som alltid gir alarm: lokket åpnes, tamperfolien brytes, kabelsløyfen eller antennekabelen kuttes, strømmen kuttes, GPS-skjermen forsvinner fra CAN-bussen, eller et kamera tildekkes, sprayes, blendes eller vris. Ingen forbipasserende gjør dette ved et uhell.</p>
+<h3>Miljøprofiler</h3>
+<table>
+<tr><th style="width:22%"></th><th>Skog og avsides</th><th>Landlig og industri</th><th>By og travelt</th></tr>
+<tr><td>Ytre sone</td><td>Forvarsel med bilde til appen</td><td>Logg, og forvarsel om natten</td><td>Bare logg</td></tr>
+<tr><td>Krav for alarm</td><td>Radar og kamera bekrefter person, person på maskinen over ca. 10 s, eller ett fysisk tegn</td><td>Person i kjernesonen og ett fysisk tegn</td><td>Person i kjernesonen og to fysiske tegn</td></tr>
+<tr><td>Kamera</td><td>Hele synsfeltet</td><td>Hele synsfeltet</td><td>Fortau og vei maskert bort</td></tr>
+<tr><td>Typiske dyr</td><td>Elg, hjort, rev</td><td>Rev, katt</td><td>Katt, fugl, rotter</td></tr>
+<tr><td>Ved tvil</td><td>Bilde til anleggsleder</td><td>Bilde til anleggsleder, ingen sirene</td><td>Bilde til anleggsleder, ingen sirene</td></tr>
+<tr><td>Sirene</td><td>Ved alarm</td><td>Ved alarm</td><td>Ved alarm, med begrenset varighet</td></tr>
+</table>
+<h3>Profil per maskin</h3>
+<p>En eier har som regel mye utstyr spredt på steder med helt ulike forhold. Miljøprofilen settes derfor per maskin, brakke eller container, ikke per eier eller anlegg.</p>
+<ul>
+<li><b>Ved oppsett</b> velger montøren profil for hver enhet. Anlegget kan ha en standardprofil som nye enheter arver.</li>
+<li><b>Endres i dashboard og app</b> av anleggsleder eller administrator, og endringen logges.</li>
+<li><b>Når maskinen flyttes</b> til et nytt sted (GNSS), foreslår plattformen ny profil ut fra posisjonen, for eksempel by når maskinen står i et sentrumsområde. Anleggsleder bekrefter forslaget. Enheten starter en kort læremodus på det nye stedet.</li>
+<li><b>Tidsplan</b> kan gi ulik profil til ulike tider, for eksempel strengere krav fredag og lørdag kveld for en maskin i byen.</li>
+<li><b>Tersklene finjusteres</b> per maskin ut fra læremodus og avviste alarmer. Det som er lært på ett sted, følger ikke med til neste.</li>
+</ul>
+<h3>Læremodus</h3>
+<p>De første 1–2 ukene etter montering logger enheten uten å alarmere, bortsett fra ved entydig sabotasje. Den lærer det normale for stedet:</p>
+<ul>
+<li>hvor mye folk og trafikk det er per time og ukedag</li>
+<li>vibrasjon fra tunge kjøretøy, trikk eller tog</li>
+<li>radiostøy og mobildekning, slik at dårlig dekning ikke tolkes som jamming</li>
+<li>radarbildet av omgivelsene og referansebilder for kameraene</li>
+</ul>
+<p>Etterpå sammenlignes alt med dette. Det som er normalt for akkurat det stedet, gir ikke alarm.</p>
+<h3>Maskinene kontrollerer hverandre</h3>
+<p>Kjenner alle maskinene på anlegget samme vibrasjon samtidig, er det en lastebil eller et tog, ikke noen som bryter på én maskin. Det samme gjelder vind, kraftig regn og snø. Det som rammer alle samtidig er omgivelsene, det som rammer én er mistenkelig. Dette bruker gruppenettet fra kapittel 7.</p>
+<h3>Vær og kjente feilkilder</h3>
+<table>
+<tr><th style="width:28%">Feilkilde</th><th>Tiltak</th></tr>
+<tr><td>Sterk vind, regn og snø</td><td>Værdata for stedet demper følsomheten for vibrasjon og radar mens det står på. Sabotasje gir fortsatt alarm.</td></tr>
+<tr><td>Insekter og edderkoppnett foran kameraet</td><td>IR-lys tiltrekker insekter. Noe som henger stille foran linsen over tid, gir servicemelding, ikke alarm. Brå tildekking gir alarm.</td></tr>
+<tr><td>Billys og gatelys</td><td>Kameraets KI skiller lys som feier over bildet fra personer. Lyssensoren ser at det er kortvarig.</td></tr>
+<tr><td>Dyr</td><td>Radaren skiller på høyde, gange og fart, og kameraet bekrefter. Skogprofilen har strengere krav til dyreklassifisering.</td></tr>
+<tr><td>Arbeidere som glemmer å avarmere</td><td>Automatisk forslag om avarmering når kjent telefon er i nærheten i arbeidstid, og bilde til anleggsleder før alarm.</td></tr>
+<tr><td>Dårlig mobildekning</td><td>Lært i læremodus. Bare brudd i et ellers stabilt mønster, sammen med støy eller naboer som mister kontakten, tolkes som jamming.</td></tr>
+</table>
+<h3>Mennesket som siste ledd</h3>
+<p>Usikre hendelser sendes som forvarsel med bilde til anleggsleder i appen, uten sirene og uten alarmstasjon. Én tast bekrefter alarm eller avviser den. Avviste hendelser merkes med årsak (forbipasserende, dyr, vær, glemt avarmering), og plattformen bruker det til å justere tersklene for anlegget og forbedre KI-modellen.</p>
+<h3>Mål og måling</h3>
+<ul>
+<li>Forslag til mål: under én falsk alarm per ti enheter per måned, og ingen tapte reelle alarmer i testene.</li>
+<li>Måles i piloten på anlegg både i skog og i by, også om vinteren.</li>
+<li>Til sammenligning oppgir Ajax at MotionCam Outdoor ikke reagerer på dyr opp til 80 cm når den er riktig montert, og Reconeyez oppgir 95 % færre falske alarmer med sin læringsfunksjon. Begge er produsentenes egne tall.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">9</span>Sabotasjesikring</h2>
+<table>
+<tr><th style="width:26%">Tiltak</th><th>Hvordan</th><th style="width:28%">Hva det stopper</th></tr>
+<tr><td>Signert heartbeat</td><td>Sikkerhetsbrikke (ATECC608B) signerer, teller mot replay, secure boot og kryptert flash, låst debugport</td><td>Falsk enhet som sender «alt OK»</td></tr>
+<tr><td>Tamperfolie</td><td>To sammenflettede kobberbaner i lokket og på kortets bunnlag. Måles for brudd og kortslutning.</td><td>Boring og kutting i kapslingen</td></tr>
+<tr><td>Lokk- og veggbryter</td><td>Reed-bryter med magnet, i serie med bryter mot underlaget</td><td>Åpning og nedmontering</td></tr>
+<tr><td>Lyssensor</td><td>Lys inne i tett kapsling</td><td>Åpning av lokket</td></tr>
+<tr><td>Antennesløyfe</td><td>DC-strøm via RF-drossel, motstand i antennefoten</td><td>Kutting av antennekabel</td></tr>
+<tr><td>Kabelsløyfe rundt GPS-utstyret</td><td>Skjermet toleder rundt GPS-mottakerens kabler, avsluttet med motstand</td><td>Demontering av GPS-utstyret</td></tr>
+<tr><td>Strømbruddsdeteksjon</td><td>Komparator gir avbrudd på mikrosekunder, «last gasp»-melding, drift videre på batteri</td><td>Strømkutt</td></tr>
+<tr><td>Loddet SIM (MFF2)</td><td>Ingen uttakbart SIM-kort</td><td>Fjerning av SIM</td></tr>
+<tr><td>Innstøping</td><td>Potting av kortet unntatt radar, mikrofonport og antenner</td><td>Tukling med elektronikken</td></tr>
+<tr><td>Anti-masking på kameraene</td><td>IR-nærhet ved linsen, bildeanalyse, akselerometer, overvåket kabel og signerte bilder (kapittel 11)</td><td>Tildekking, spray, blending, flytting og falske bilder</td></tr>
+<tr><td>Synlig og skjult enhet</td><td>Én synlig enhet som lokkemiddel, én skjult</td><td>Tyven tror han er ferdig</td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">10</span>Maskinvare v1</h2>
+<p>V1 er ett kretskort som fungerer som komplett alarmenhet. Kamerahubben (kapittel 11) plugges på ekspansjonskontakten. nRF9151 er sentrum: radar, LoRa og flash deler én SPI-buss, seks langsomme enheter deler I2C, og sabotasje overvåkes på de åtte analoge inngangene.</p>
+<div class="fig">
+<svg viewBox="0 0 760 508" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11.5">
+<defs><marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<g fill="none" stroke="#5d646d" stroke-width="1.2"><path d="M380 112V136" marker-end="url(#d)"/><path d="M240 190H266" marker-end="url(#d)"/><path d="M520 160H494" marker-end="url(#d)"/><path d="M520 268H494" marker-end="url(#d)"/><path d="M460 280V348H516" marker-end="url(#d)"/><path d="M240 348H300V284" marker-end="url(#d)"/><path d="M380 400V284" marker-end="url(#d)"/></g>
+<rect x="24" y="56" width="216" height="248" rx="8" fill="#f3f3ef" stroke="#9aa0a6"/><text x="40" y="78" font-weight="650" font-size="13">SPI-buss</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="40" y="88" width="184" height="56" rx="7"/><rect x="40" y="160" width="184" height="56" rx="7"/><rect x="40" y="232" width="184" height="56" rx="7"/></g>
+<g text-anchor="middle"><text x="132" y="112" font-weight="650" font-size="13">Radar A121</text><text x="132" y="129" fill="#5d646d">SPI + INT + ENABLE</text><text x="132" y="184" font-weight="650" font-size="13">LoRa SX1262</text><text x="132" y="201" fill="#5d646d">SPI + BUSY + DIO1</text><text x="132" y="256" font-weight="650" font-size="13">Flash MX25R6435F</text><text x="132" y="273" fill="#5d646d">Hendelseslogg</text></g>
+<rect x="270" y="56" width="220" height="56" rx="7" fill="#fff" stroke="#9aa0a6"/><text x="380" y="80" text-anchor="middle" font-weight="650" font-size="13">LTE/NTN-antenne</text><text x="380" y="97" text-anchor="middle" fill="#5d646d">Ekstern + intern reserve</text>
+<rect x="270" y="140" width="220" height="140" rx="8" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.8"/>
+<g text-anchor="middle"><text x="380" y="172" font-weight="700" font-size="15">nRF9151 SiP</text><text x="380" y="196">Arm Cortex-M33, 32 GPIO</text><text x="380" y="214">LTE-M / NB-IoT + satellitt</text><text x="380" y="232">Loddet SIM (MFF2)</text><text x="380" y="250">PDM, UART, 8 ADC-kanaler</text></g>
+<rect x="520" y="56" width="216" height="176" rx="8" fill="#f3f3ef" stroke="#9aa0a6"/><text x="536" y="78" font-weight="650" font-size="13">I2C-buss</text>
+<text x="536" y="102">IMU LSM6DSV16X</text><text x="536" y="122">Sikkerhetsbrikke ATECC608B</text><text x="536" y="142">Lyssensor OPT3001</text><text x="536" y="162">GNSS u-blox MAX-M10S</text><text x="536" y="182">Lader BQ25180</text><text x="536" y="202">I/O-utvider PCAL6408A</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="520" y="248" width="216" height="56" rx="7"/><rect x="520" y="320" width="216" height="56" rx="7"/><rect x="24" y="320" width="216" height="56" rx="7"/></g>
+<g text-anchor="middle"><text x="628" y="272" font-weight="650" font-size="13">Mikrofon IM69D130</text><text x="628" y="289" fill="#5d646d">PDM</text><text x="628" y="344" font-weight="650" font-size="13">Sireneutgang</text><text x="628" y="361" fill="#5d646d">SIREN_EN via MOSFET</text><text x="132" y="344" font-weight="650" font-size="13">Ekspansjon</text><text x="132" y="361" fill="#5d646d">Kamerahub (UART + EXP_INT)</text></g>
+<rect x="24" y="400" width="712" height="84" rx="8" fill="#f3f3ef" stroke="#9aa0a6"/><text x="40" y="424" font-weight="650" font-size="13">Analoge innganger og tamper (AIN0–AIN7 og GPIO)</text>
+<text x="40" y="444">Maskinspenning · batteri · VSYS · tamperfolie · LTE- og LoRa-antennesløyfe</text><text x="40" y="462">GPS-kabelsløyfe · tenning · lokk- og veggbryter · strømbrudd (PFAIL)</text>
+</svg>
+<div class="cap">Figur 5. Blokkskjema for v1.</div>
+</div>
+
+<h3>Strømforsyning</h3>
+<p>Enheten går på maskinens 12/24 V og lader et reservebatteri. Laderen har power path, så systemet forsynes fra VSYS uansett kilde og batteriet tar over uten avbrudd. Enheten bør kobles før maskinens hovedstrømbryter, slik at batteriet bare brukes når strømmen faktisk kuttes.</p>
+<div class="fig">
+<svg viewBox="0 0 760 572" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11.5">
+<defs><marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<g fill="none" stroke="#5d646d" stroke-width="1.2"><path d="M380 104V124" marker-end="url(#e)"/><path d="M230 76H116V124" marker-end="url(#e)"/><path d="M530 76H644V124" marker-end="url(#e)"/><path d="M380 184V204" marker-end="url(#e)"/><path d="M380 264V284" marker-end="url(#e)"/><path d="M380 344V368H136V388" marker-end="url(#e)"/><path d="M380 368V388" marker-end="url(#e)"/><path d="M380 368H624V388" marker-end="url(#e)"/><path d="M380 464V484" marker-end="url(#e)"/></g>
+<g fill="#fff" stroke="#9aa0a6"><rect x="230" y="48" width="300" height="56" rx="7"/><rect x="24" y="128" width="184" height="56" rx="7"/><rect x="552" y="128" width="184" height="56" rx="7"/><rect x="230" y="128" width="300" height="56" rx="7"/><rect x="230" y="208" width="300" height="56" rx="7"/><rect x="24" y="392" width="224" height="72" rx="7"/><rect x="268" y="392" width="224" height="72" rx="7"/><rect x="512" y="392" width="224" height="72" rx="7"/><rect x="268" y="488" width="224" height="56" rx="7"/></g>
+<rect x="230" y="288" width="300" height="56" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.8"/>
+<g text-anchor="middle">
+<text x="380" y="72" font-weight="650" font-size="13">Maskinens batteri 12/24 V</text><text x="380" y="89" fill="#5d646d">Fast tilkobling før hovedstrømbryter</text>
+<text x="116" y="152" font-weight="650" font-size="13">Komparator TLV7031</text><text x="116" y="169" fill="#5d646d">PFAIL_N ved strømbrudd</text>
+<text x="644" y="152" font-weight="650" font-size="13">Sireneutgang</text><text x="644" y="169" fill="#5d646d">MOSFET, maks ca. 2 A</text>
+<text x="380" y="152" font-weight="650" font-size="13">Inngangsvern</text><text x="380" y="169" fill="#5d646d">Sikring, ideell diode LM74700-Q1, TVS</text>
+<text x="380" y="232" font-weight="650" font-size="13">Buck LM5164</text><text x="380" y="249" fill="#5d646d">9–36 V inn, 5 V ut, 1 A</text>
+<text x="380" y="312" font-weight="650" font-size="13">Lader BQ25180 med power path</text><text x="380" y="329">VSYS 3,4–4,4 V · 18650-batteri med NTC</text>
+<text x="136" y="416" font-weight="650" font-size="13">nRF9151 VDD</text><text x="136" y="433" fill="#5d646d">Direkte fra VSYS</text><text x="136" y="449" fill="#5d646d">LTE-topper tas fra buffer</text>
+<text x="380" y="416" font-weight="650" font-size="13">Buck 3,3 V TPS62840</text><text x="380" y="433" fill="#5d646d">Alltid på: IMU, ATECC, lys,</text><text x="380" y="449" fill="#5d646d">I/O-utvider, LoRa, VDD_GPIO</text>
+<text x="624" y="416" font-weight="650" font-size="13">Buck 1,8 V TPS62840</text><text x="624" y="433" fill="#5d646d">Radar A121</text><text x="624" y="449" fill="#5d646d">Slås av via RADAR_PWR</text>
+<text x="380" y="512" font-weight="650" font-size="13">Lastbryter TPS22916</text><text x="380" y="529" fill="#5d646d">3V3_SW: GNSS, mikrofon, flash</text></g>
+</svg>
+<div class="cap">Figur 6. Strømtre fra 12/24 V til fire strømdomener.</div>
+</div>
+<ul>
+<li><b>Sikring:</b> ca. 1 A rett ved kontakten.</li>
+<li><b>Feilpolaritet:</b> ideell diode (LM74700-Q1 med MOSFET) gir lavt spenningsfall og hindrer tapping bakover.</li>
+<li><b>Spenningstopper:</b> TVS dimensjonert etter ISO 7637-2 og ISO 16750-2 for 24 V-anlegg med lastdump.</li>
+<li><b>Buck LM5164:</b> tåler opptil 100 V inn, gir 5 V til laderen.</li>
+<li><b>Lader BQ25180:</b> lineær lader med power path og I2C. NTC stopper lading under 0 °C. Varmemotstand via BAT_HEAT kan holde batteriet over frysepunktet når maskinstrøm finnes.</li>
+<li><b>Buffer på VSYS:</b> et par hundre µF med lav ESR tar strømtopper fra LTE-sending, særlig i kulde.</li>
+<li><b>Flere domener i v1.1:</b> lastbryter nr. 2 (TPS22916) gir 3V3_EXP til ekspansjonskontakten (styres av EXP_EN), og en isolert DC/DC (TI UCC12050) gir 5V_ISO til CAN-siden (styres av CAN_PWR_EN). CAN brukes bare når maskinstrøm finnes, så den isolerte forsyningen tas fra 5V_BUCK.</li>
+</ul>
+
+<h3>GPIO-tilordning for nRF9151</h3>
+<p>Alle 32 GPIO er i bruk, og langsomme signaler er flyttet til en I/O-utvider. VDD_GPIO settes til 3,3 V fordi ATECC608B krever minst 2,0 V.</p>
+<table>
+<tr><th style="width:13%">Pinne</th><th style="width:19%">Signal</th><th style="width:30%">Kobles til</th><th>Funksjon</th></tr>
+<tr><td class="mono">P0.00</td><td class="mono">SPI_SCK</td><td>A121, LoRa, flash</td><td>SPI-klokke</td></tr>
+<tr><td class="mono">P0.01</td><td class="mono">SPI_MOSI</td><td>A121, LoRa, flash</td><td>Data ut</td></tr>
+<tr><td class="mono">P0.02</td><td class="mono">SPI_MISO</td><td>A121, LoRa, flash</td><td>Data inn</td></tr>
+<tr><td class="mono">P0.03</td><td class="mono">CS_RADAR</td><td>A121 SPI_SS</td><td>Chip select radar</td></tr>
+<tr><td class="mono">P0.04</td><td class="mono">CS_LORA</td><td>SX1262 NSS</td><td>Chip select LoRa</td></tr>
+<tr><td class="mono">P0.05</td><td class="mono">CS_FLASH</td><td>MX25R6435F CS#</td><td>Chip select flash</td></tr>
+<tr><td class="mono">P0.06</td><td class="mono">RADAR_INT</td><td>A121 INTERRUPT</td><td>Radar har måling klar</td></tr>
+<tr><td class="mono">P0.07</td><td class="mono">RADAR_EN</td><td>A121 ENABLE</td><td>Radar av/på (under 1 µA av)</td></tr>
+<tr><td class="mono">P0.08</td><td class="mono">LORA_BUSY</td><td>SX1262 BUSY</td><td>LoRa-radio opptatt</td></tr>
+<tr><td class="mono">P0.09</td><td class="mono">LORA_DIO1</td><td>SX1262 DIO1</td><td>Avbrudd: pakke mottatt/sendt</td></tr>
+<tr><td class="mono">P0.10</td><td class="mono">EXP_INT</td><td>Kamerahub</td><td>Hubben vekker hovedenheten</td></tr>
+<tr><td class="mono">P0.11</td><td class="mono">I2C_SDA</td><td>I2C-buss</td><td>Data, 4,7 kΩ pull-up</td></tr>
+<tr><td class="mono">P0.12</td><td class="mono">I2C_SCL</td><td>I2C-buss</td><td>Klokke, 4,7 kΩ pull-up</td></tr>
+<tr><td class="mono">P0.13 AIN0</td><td class="mono">VIN_SENSE</td><td>Deler fra 12/24 V</td><td>Maskinspenning</td></tr>
+<tr><td class="mono">P0.14 AIN1</td><td class="mono">VBAT_SENSE</td><td>Deler fra batteri</td><td>Reservebatteri</td></tr>
+<tr><td class="mono">P0.15 AIN2</td><td class="mono">MESH_SENSE</td><td>Tamperfolie</td><td>Brudd eller kortslutning</td></tr>
+<tr><td class="mono">P0.16 AIN3</td><td class="mono">ANT_LTE_SENSE</td><td>DC-sløyfe LTE-antenne</td><td>Antennekabel kuttet</td></tr>
+<tr><td class="mono">P0.17 AIN4</td><td class="mono">ANT_LORA_SENSE</td><td>DC-sløyfe LoRa-antenne</td><td>Antennekabel kuttet</td></tr>
+<tr><td class="mono">P0.18 AIN5</td><td class="mono">GPS_LOOP_SENSE</td><td>Kabelsløyfe GPS-utstyr</td><td>Sløyfe kuttet</td></tr>
+<tr><td class="mono">P0.19 AIN6</td><td class="mono">IGN_SENSE</td><td>Tenning via deler</td><td>Maskinen slått på</td></tr>
+<tr><td class="mono">P0.20 AIN7</td><td class="mono">VSYS_SENSE</td><td>Systemspenning</td><td>Overvåking av buffer</td></tr>
+<tr><td class="mono">P0.21</td><td class="mono">IMU_INT1</td><td>LSM6DSV16X INT1</td><td>Vekking ved bevegelse</td></tr>
+<tr><td class="mono">P0.22</td><td class="mono">SYS_INT</td><td>Lys, lader, I/O-utvider (open drain)</td><td>Felles avbrudd</td></tr>
+<tr><td class="mono">P0.23</td><td class="mono">PDM_CLK</td><td>IM69D130 CLK</td><td>Klokke mikrofon</td></tr>
+<tr><td class="mono">P0.24</td><td class="mono">PDM_DIN</td><td>IM69D130 DATA</td><td>Lyddata</td></tr>
+<tr><td class="mono">P0.25</td><td class="mono">COP_UART_TX</td><td>nRF54L15 (v1.1)</td><td>Til koprosessor for CAN og BLE. I v1: IMU_INT2</td></tr>
+<tr><td class="mono">P0.26</td><td class="mono">LID_SW</td><td>Lokk- og veggbryter i serie</td><td>Kapsling åpnet / tatt ned</td></tr>
+<tr><td class="mono">P0.27</td><td class="mono">PFAIL_N</td><td>Komparator på 12/24 V</td><td>Strømbrudd</td></tr>
+<tr><td class="mono">P0.28</td><td class="mono">SIREN_EN</td><td>MOSFET-driver</td><td>Sirene / blinklys</td></tr>
+<tr><td class="mono">P0.29</td><td class="mono">COP_UART_RX</td><td>nRF54L15 (v1.1)</td><td>Fra koprosessor, også vekking. I v1: PWR_EN_SENS</td></tr>
+<tr><td class="mono">P0.30</td><td class="mono">EXP_UART_TX</td><td>Ekspansjonskontakt</td><td>Til kamerahub eller utvidelsesboks</td></tr>
+<tr><td class="mono">P0.31</td><td class="mono">EXP_UART_RX</td><td>Ekspansjonskontakt</td><td>Fra kamerahub eller utvidelsesboks</td></tr>
+</table>
+<p><b>Faste pinner:</b> SWDCLK/SWDIO til Tag-Connect-testpunkt, låst i produksjon. nRESET uten ekstern pull-up (ikke tillatt av Nordic). SIM-pinnene til loddet MFF2-SIM. GPS-pinnen på nRF9151 brukes ikke i v1.</p>
+<p><b>I/O-utvider PCAL6408A (v1):</b> LED, GNSS_RESET_N, LORA_NRESET, EXP_EN, MESH_DRIVE, ANT_SEL, BAT_HEAT og RADAR_PWR. I v1.1 brukes PCAL6416A med 16 pinner: P0_0 LED_G, P0_1 LED_R, P0_2 GNSS_RESET_N, P0_3 LORA_NRESET, P0_4 EXP_EN, P0_5 MESH_DRIVE, P0_6 ANT_SEL, P0_7 BAT_HEAT, P1_0 RADAR_PWR, P1_1 PWR_EN_SENS, P1_2 COP_RESET, P1_3 CAN_PWR_EN, P1_4 LORA_RXEN, P1_5 GNSS_ANT_OK (inngang), P1_6 HW_REV0 (inngang) og P1_7 reserve.</p>
+<p><b>ENABLE og I2C-adresser:</b> ENABLE på nRF9151 holdes høy fra 3V3_AON. Adressene på I2C-bussen er BQ25180 0x6A, MAX-M10S 0x42, LSM6DSV16X 0x6B (SA0 høy), OPT3001 0x44, ATECC608B 0x60 og PCAL6416A 0x20, uten kollisjon.</p>
+
+<h3>Radio og antenner</h3>
+<table>
+<tr><th>Radio</th><th>Komponent</th><th>Ekstern antenne</th><th>Intern reserve</th><th>Merknad</th></tr>
+<tr><td>LTE-M / NB-IoT / NTN</td><td>nRF9151</td><td>Bredbånd 698–2200 MHz</td><td>Chipantenne</td><td>Pi-nett for tilpasning, fri sikt mot himmel for NTN</td></tr>
+<tr><td>LoRa 868 MHz</td><td>SX1262-modul (f.eks. Ebyte E22-900M22S)</td><td>Kvartbølge 868 MHz</td><td>PCB-antenne</td><td>+22 dBm, ca. 120 mA sendetopp, sjekk CE</td></tr>
+<tr><td>GNSS</td><td>u-blox MAX-M10S</td><td>Aktiv GNSS-antenne</td><td>Patch</td><td>Bias-T med strømmåling avslører kabelbrudd</td></tr>
+</table>
+<p><b>Antennebrudd:</b> en liten DC-strøm sendes ut på kabelen via RF-drossel. En motstand i antennefoten (f.eks. 10 kΩ) gir normal verdi; full spenning betyr kuttet kabel, null betyr kortslutning. En seriekondensator holder DC unna radioen. Kontakter: vanntett SMA (IP67) eller FAKRA.</p>
+
+<h3>Sensorer og tamper-kretser</h3>
+<ul>
+<li><b>Radar:</b> A121 trenger 1,8 V på RX, TX og VDIG fra egen regulator. VIO til 3,3 V. 24 MHz krystall. SPI-linjer holdes lave når 1,8 V er av. Plastvindu uten metallpigment, etter Acconeers retningslinjer.</li>
+<li><b>Tamperfolie:</b> MESH_DRIVE pulser banen, MESH_SENSE leser spenningen. Brudd gir stigning, kortslutning mot jord gir fall.</li>
+<li><b>Kabelsløyfe:</b> TVS og seriemotstand på inngangen fordi kabelen ligger ute i maskinen.</li>
+<li><b>Tenning:</b> spenningsdeler, klemmediode og RC-filter til ADC.</li>
+<li><b>Sirene:</b> logikkstyrt N-MOSFET (60 V) med frihjulsdiode og sikring, ca. 2 A.</li>
+</ul>
+
+<h3>Kretskortlayout</h3>
+<p>Forslaget er et 4-lags kort på ca. 100 × 70 mm. Støyende strømdel på én kant, radioene på motsatt kant og radaren øverst under et plastvindu.</p>
+<div class="fig">
+<svg viewBox="0 0 760 528" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11.5">
+<rect x="80" y="56" width="600" height="424" rx="12" fill="none" stroke="#5d646d" stroke-width="2"/>
+<g fill="#fff" stroke="#9aa0a6"><rect x="96" y="72" width="168" height="168" rx="7"/><rect x="96" y="256" width="168" height="208" rx="7"/><rect x="288" y="72" width="200" height="76" rx="7"/><rect x="288" y="348" width="200" height="116" rx="7"/></g>
+<rect x="288" y="168" width="200" height="160" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.8"/>
+<g fill="#f3f3ef" stroke="#9aa0a6" stroke-dasharray="5 4"><rect x="508" y="72" width="156" height="136" rx="7"/><rect x="508" y="224" width="156" height="104" rx="7"/><rect x="508" y="344" width="156" height="120" rx="7"/></g>
+<g text-anchor="middle">
+<text x="180" y="100" font-weight="650" font-size="13">Strøm og vern</text><text x="180" y="122" fill="#5d646d">Deutsch-kontakt</text><text x="180" y="140" fill="#5d646d">TVS, ideell diode</text><text x="180" y="158" fill="#5d646d">Buck LM5164</text><text x="180" y="176" fill="#5d646d">Sireneutgang</text>
+<text x="180" y="284" font-weight="650" font-size="13">Lader og batteri</text><text x="180" y="306" fill="#5d646d">BQ25180, 3,3/1,8 V</text><text x="180" y="324" fill="#5d646d">18650 på undersiden</text><text x="180" y="342" fill="#5d646d">NTC tett på cella</text>
+<text x="388" y="102" font-weight="650" font-size="13">Radar A121</text><text x="388" y="120" fill="#5d646d">Under plastvinduet</text>
+<text x="388" y="232" font-weight="700" font-size="15">nRF9151 SiP</text><text x="388" y="254">Midt på kortet, kort vei</text><text x="388" y="272">til LTE-antennen</text>
+<text x="388" y="376" font-weight="650" font-size="13">Sensorer</text><text x="388" y="398" fill="#5d646d">IMU, lys, mikrofon</text><text x="388" y="416" fill="#5d646d">ATECC608B, flash</text><text x="388" y="434" fill="#5d646d">Mikrofonport i kortet</text>
+<text x="586" y="104" font-weight="650" font-size="13">LTE/NTN</text><text x="586" y="126" fill="#5d646d">SMA + chipantenne</text><text x="586" y="144" fill="#5d646d">Jordfri sone</text>
+<text x="586" y="256" font-weight="650" font-size="13">GNSS</text><text x="586" y="278" fill="#5d646d">MAX-M10S + patch</text>
+<text x="586" y="376" font-weight="650" font-size="13">LoRa 868</text><text x="586" y="398" fill="#5d646d">Modul + PCB-antenne</text><text x="586" y="416" fill="#5d646d">Jordfri sone</text>
+<text x="380" y="508" fill="#5d646d">Kretskort ca. 100 × 70 mm, 4 lag · stiplet = RF-sone ved kortkanten</text></g>
+</svg>
+<div class="cap">Figur 7. Plasseringsforslag, sett ovenfra.</div>
+</div>
+<table style="break-inside:avoid">
+<tr><th style="width:18%">Lag</th><th>Innhold</th></tr>
+<tr><td>L1 (topp)</td><td>Komponenter, RF-baner som 50 Ω coplanar waveguide med jord</td></tr>
+<tr><td>L2</td><td>Hel jordflate, ingen brudd under RF og SPI</td></tr>
+<tr><td>L3</td><td>Strømflater (VSYS, 3,3 V, 1,8 V) og langsomme signaler</td></tr>
+<tr><td>L4 (bunn)</td><td>Batteriholder, signaler og tamperbane som dekker kortet</td></tr>
+</table>
+<ul>
+<li>Korte RF-baner med jordvias langs begge sider. Ingen kobber under chip- og PCB-antenner.</li>
+<li>Tilpasningsnettverk ved hver antenne. Buck-regulatorer langt fra GNSS.</li>
+<li>IP67-kapsling i polykarbonat, radartransparent lokk, mikrofonport med pustende membran, sikkerhetsskruer.</li>
+</ul>
+</section>
+
+<section class="cont">
+<h2><span class="n">11</span>Kamerasystem</h2>
+<p class="lead">Kamerasystemet består av små kamerapods på ca. 30 × 30 × 22 mm som monteres diskret på maskinen, og en kamerahub (en variant av utvidelsesboksen i kapittel 14) som kobles til hovedenheten. Kameraene er selv sensorer: de gjenkjenner personer lokalt, bekrefter radaren og oppdager når noen prøver å dekke dem til, tilsløre, blende eller flytte dem.</p>
+<div class="fig">
+<svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<rect x="20" y="40" width="170" height="104" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.6"/>
+<text x="105" y="64" text-anchor="middle" font-weight="700" font-size="12.5">Hovedenhet</text><text x="105" y="82" text-anchor="middle">nRF9151, radar, LoRa</text><text x="105" y="98" text-anchor="middle">Alarmlogikk</text><text x="105" y="114" text-anchor="middle" fill="#5d646d">Ekspansjonskontakt</text>
+<rect x="250" y="28" width="196" height="160" rx="7" fill="#fff" stroke="#1c2127" stroke-width="1"/>
+<text x="348" y="52" text-anchor="middle" font-weight="700" font-size="12.5">Kamerahub (tilleggskort)</text>
+<text x="264" y="76">STM32H563</text><text x="264" y="94">eMMC 8 GB, kryptert</text><text x="264" y="112">2 eFuse med strømmåling</text><text x="264" y="130">2 porter på sensorbussen</text><text x="264" y="148">Service via appen (BLE)</text><text x="264" y="166" fill="#5d646d">Forsynes fra 12/24 V</text>
+<rect x="510" y="20" width="150" height="70" rx="7" fill="#e3f2f4" stroke="#23788a"/><text x="585" y="46" text-anchor="middle" font-weight="650" font-size="12">Kamerapod 1</text><text x="585" y="63" text-anchor="middle" fill="#5d646d">Kabin, ser GPS-skjerm</text><text x="585" y="78" text-anchor="middle" fill="#5d646d">og dører</text>
+<rect x="510" y="126" width="150" height="70" rx="7" fill="#e3f2f4" stroke="#23788a"/><text x="585" y="152" text-anchor="middle" font-weight="650" font-size="12">Kamerapod 2</text><text x="585" y="169" text-anchor="middle" fill="#5d646d">Tak, ser GPS-mast</text><text x="585" y="184" text-anchor="middle" fill="#5d646d">og antenner</text>
+<g stroke="#5d646d" stroke-width="1.3" fill="none"><path d="M192 92H246" marker-end="url(#f)" marker-start="url(#f)"/><path d="M448 72H480V55H506" marker-end="url(#f)" marker-start="url(#f)"/><path d="M448 150H480V161H506" marker-end="url(#f)" marker-start="url(#f)"/><path d="M105 146V224" marker-end="url(#f)"/></g>
+<text x="219" y="84" text-anchor="middle" fill="#5d646d">UART</text><text x="219" y="108" text-anchor="middle" fill="#5d646d">+ EXP_INT</text>
+<text x="478" y="214" text-anchor="middle" fill="#5d646d">Felles M12-kabel: 9–36 V + CAN FD, stålflettet strømpe</text>
+<rect x="20" y="228" width="170" height="40" rx="7" fill="#fff" stroke="#1c2127"/><text x="105" y="252" text-anchor="middle" font-weight="650" font-size="12">Mottakssentral</text>
+<text x="118" y="196" fill="#5d646d">LTE-M: alarm +</text><text x="118" y="210" fill="#5d646d">miniatyrbilde</text>
+</svg>
+<div class="cap">Figur 8. Kamerasystemet. Hubben støtter to pods i v1 og kan utvides til fire.</div>
+</div>
+
+<h3>Kamerapod</h3>
+<p>Poden gjør bildeanalysen selv. Bildebrikken står i en lavstrømsmodus med bevegelsesdeteksjon, vekker AI-prosessoren ved bevegelse, og bare bilder med en gjenkjent person eller en sabotasjehendelse sendes videre. Sensoren er monokrom uten IR-filter, så den ser godt i mørket med usynlig 940 nm IR-lys.</p>
+<div class="fig">
+<svg viewBox="0 0 680 330" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<g fill="#fff" stroke="#9aa0a6"><rect x="20" y="20" width="190" height="60" rx="7"/><rect x="20" y="96" width="190" height="60" rx="7"/><rect x="20" y="172" width="190" height="60" rx="7"/>
+<rect x="470" y="20" width="190" height="48" rx="7"/><rect x="470" y="78" width="190" height="48" rx="7"/><rect x="470" y="136" width="190" height="48" rx="7"/><rect x="470" y="194" width="190" height="48" rx="7"/></g>
+<rect x="250" y="40" width="180" height="172" rx="8" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.6"/>
+<rect x="20" y="258" width="640" height="52" rx="7" fill="#f3f3ef" stroke="#9aa0a6"/>
+<g text-anchor="middle">
+<text x="115" y="44" font-weight="650" font-size="12">Bildebrikke HM0360</text><text x="115" y="62" fill="#5d646d">VGA mono, M7-objektiv ca. 100°</text>
+<text x="115" y="120" font-weight="650" font-size="12">IR-LED 940 nm × 2–4</text><text x="115" y="138" fill="#5d646d">Usynlig, pulset med driver</text>
+<text x="115" y="196" font-weight="650" font-size="12">Anti-masking VCNL4040</text><text x="115" y="214" fill="#5d646d">IR-nærhet + lyssensor</text>
+<text x="340" y="82" font-weight="700" font-size="13.5">Himax WiseEye2</text><text x="340" y="100">Cortex-M55 + Ethos-U55</text><text x="340" y="118">Persongjenkjenning</text><text x="340" y="136">Skarphet, histogram,</text><text x="340" y="152">avvik fra referansebilde</text><text x="340" y="176" fill="#5d646d">Signerer hvert bilde</text>
+<text x="565" y="40" font-weight="650" font-size="12">Akselerometer LIS2DW12</text><text x="565" y="56" fill="#5d646d">Slag, vridning, løsning</text>
+<text x="565" y="98" font-weight="650" font-size="12">Sikkerhetsbrikke ATECC608B</text><text x="565" y="114" fill="#5d646d">Nøkler, signatur</text>
+<text x="565" y="156" font-weight="650" font-size="12">Flash 16 MB</text><text x="565" y="172" fill="#5d646d">Bilder før og etter hendelse</text>
+<text x="565" y="214" font-weight="650" font-size="12">CAN FD</text><text x="565" y="230" fill="#5d646d">Felles sensorbuss</text>
+<text x="340" y="281" font-weight="650" font-size="12">Strøm: buck 9–36 V til 3,3 V, LDO til 1,8 og 0,8 V</text><text x="340" y="298" fill="#5d646d">Varmeelement og NTC holder vinduet fritt for dugg og is</text></g>
+<g stroke="#5d646d" stroke-width="1.2"><line x1="212" y1="50" x2="248" y2="70"/><line x1="212" y1="126" x2="248" y2="126"/><line x1="212" y1="202" x2="248" y2="182"/><line x1="468" y1="44" x2="432" y2="70"/><line x1="468" y1="102" x2="432" y2="110"/><line x1="468" y1="160" x2="432" y2="150"/><line x1="468" y1="218" x2="432" y2="190"/><line x1="340" y1="214" x2="340" y2="256"/></g>
+</svg>
+<div class="cap">Figur 9. Blokkskjema for kamerapoden. Kretskortet er tenkt rundt 25 × 25 mm.</div>
+</div>
+<table>
+<tr><th style="width:24%">Driftsmodus</th><th>Hva som er på</th><th class="num" style="width:22%">Effekt (anslag)</th></tr>
+<tr><td>Dvale (armert)</td><td>HM0360 med bevegelsesdeteksjon i lav bildefrekvens, WE2 sover</td><td class="num">ca. 1–3 mW</td></tr>
+<tr><td>Analyse</td><td>WE2 kjører persongjenkjenning, bilder til flash</td><td class="num">ca. 50–150 mW</td></tr>
+<tr><td>IR-belysning</td><td>940 nm LED pulset under eksponering</td><td class="num">0,5–1,5 W i pulser</td></tr>
+<tr><td>Varme</td><td>Kun ved fare for dugg eller is</td><td class="num">ca. 0,5 W</td></tr>
+<tr><td>Avarmert</td><td>Kamera av, bare heartbeat på kabelen</td><td class="num">under 1 mW</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">HM0360 er oppgitt til under 0,5 mW ved 3 bilder/s i binning-modus og ca. 14,5 mW ved VGA og 60 bilder/s. Øvrige tall er anslag som må måles på prototype.</p>
+
+<h3>Kamerahub</h3>
+<ul>
+<li><b>Prosessor:</b> STM32H563 tar imot bilder, lagrer opptak før og etter alarm, og velger det beste bildet til sentralen. Detaljer i kapittel 16.</li>
+<li><b>Lagring:</b> eMMC på 8 GB er mer robust mot vibrasjon enn minnekort. Innholdet er kryptert, så et stjålet kort ikke gir tilgang til bildene.</li>
+<li><b>Porter:</b> hver pod har egen port med elektronisk sikring (eFuse, f.eks. TI TPS1663 for 60 V) som måler strømmen. Brudd, kortslutning og unormalt forbruk oppdages med en gang.</li>
+<li><b>Data:</b> felles sensorbuss med CAN FD (kapittel 14). Et miniatyrbilde på ca. 20 kB overføres på under ett sekund. Kameraene ligger på eget segment, så en kuttet kabel tar ikke ut andre sensorer.</li>
+<li><b>Overvåking:</b> poden sender signert heartbeat hvert sekund. Hubben svarer med utfordring-svar, så en falsk pod som spiller av gamle bilder avsløres.</li>
+<li><b>Service:</b> livebilde for å rette inn kameraene vises i installatørappen via Bluetooth i hovedenheten, bare i autentisert servicemodus.</li>
+</ul>
+<table>
+<tr><th style="width:24%">Ekspansjonskontakt (Molex Micro-Fit 3.0, 10-pin)</th><th>Funksjon</th></tr>
+<tr><td class="mono">EXP_VIN (1, 2)</td><td>12/24 V fra inngangsvernet via PTC 1,5 A, forsyner hub og pods</td></tr>
+<tr><td class="mono">GND (3, 4)</td><td>Jord</td></tr>
+<tr><td class="mono">3V3_EXP (5)</td><td>3,3 V via lastbryter styrt av EXP_EN. Hubben har egne regulatorer, så den brukes bare ved behov.</td></tr>
+<tr><td class="mono">EXP_UART_TX / RX (6, 7)</td><td>Kommandoer og bilder mellom nRF9151 og hub (P0.30 / P0.31)</td></tr>
+<tr><td class="mono">EXP_INT (8)</td><td>Hubben vekker hovedenheten når et kamera ser en person eller sabotasje (P0.10, tidligere reserve)</td></tr>
+<tr><td class="mono">LOOP_A / LOOP_B (9, 10)</td><td>Sløyfe som er kortsluttet i hubben og ligger i serie med lokk- og veggbryteren. Trekkes kontakten, brytes kjeden og LID_SW gir alarm. Uten hub settes en kortslutningsplugg.</td></tr>
+</table>
+
+<h3>Anti-masking</h3>
+<p>Anti-masking betyr å oppdage at noen prøver å gjøre kameraet blindt uten å ødelegge det. Hver metode under bruker minst to uavhengige målinger, slik at skitt og vær ikke gir falske alarmer.</p>
+<table>
+<tr><th style="width:22%">Angrep</th><th>Hvordan det oppdages</th><th style="width:24%">Respons</th></tr>
+<tr><td>Teip, pose eller hånd over linsen</td><td>IR-nærhetssensoren ved linsen får mye sterkere refleksjon. Bildet blir mørkt og ensartet (histogrammet kollapser).</td><td>Alarm og siste bilde før tildekking</td></tr>
+<tr><td>Spray, maling eller fett</td><td>Skarphet og kontrast faller brått. Et langsomt fall over dager tolkes som skitt.</td><td>Alarm ved brått fall, servicemelding ved langsomt</td></tr>
+<tr><td>Blending med lommelykt eller laser</td><td>Bildet blir overeksponert, og lyssensoren viser sterkt lys midt på natten.</td><td>Alarm</td></tr>
+<tr><td>Vri eller flytte kameraet</td><td>Akselerometeret merker bevegelse, og bildet avviker fra lagret referansebilde.</td><td>Alarm</td></tr>
+<tr><td>Kutte eller kortslutte kabelen</td><td>eFuse i hubben ser strømbrudd eller kortslutning, og heartbeat fra poden uteblir innen 1 s.</td><td>Alarm</td></tr>
+<tr><td>Bytte til falsk pod eller spille av bilder</td><td>Bilder og heartbeat signeres i podens sikkerhetsbrikke med teller. Hubben bruker utfordring-svar.</td><td>Alarm, bildene avvises</td></tr>
+<tr><td>Dugg og is</td><td>Temperatur og fuktighet måles. Varmeelementet holder vinduet fritt, så langsom tilsløring ikke blir falsk alarm.</td><td>Varme på, ingen alarm</td></tr>
+</table>
+
+<h3>Bildeflyt og båndbredde</h3>
+<table>
+<tr><th style="width:22%">Kanal</th><th>Hva som sendes</th></tr>
+<tr><td>LTE-M</td><td>Først et miniatyrbilde (320 × 240 JPEG, ca. 15–25 kB) med personramme og signatur, deretter flere bilder eller full oppløsning når sentralen ber om det. Tar noen sekunder.</td></tr>
+<tr><td>NB-IoT</td><td>Miniatyrbilde, men tregere.</td></tr>
+<tr><td>Satellitt (NTN)</td><td>Bare tekst og metadata. Bildet sendes når mobilnettet er tilbake.</td></tr>
+<tr><td>LoRa via nabo</td><td>Bare alarmen. For lite båndbredde til bilder.</td></tr>
+<tr><td>Lokal lagring</td><td>Hubben tar vare på ca. 10 s før og 60 s etter hendelsen i full kvalitet, kryptert.</td></tr>
+<tr><td>Wi-Fi på stedet (valgfritt)</td><td>Videoklipp kan lastes opp når anlegget har eget nett.</td></tr>
+</table>
+
+<h3>360 graders dekning</h3>
+<p>Det finnes to måter å se hele vegen rundt en maskin eller et bygg. For maskiner anbefales flere små pods. For oversikt over et anlegg fra brakketaket eller en mast passer et 360-kamera.</p>
+<table>
+<tr><th style="width:22%">Løsning</th><th>Fordeler</th><th>Ulemper</th><th style="width:18%">Anbefalt for</th></tr>
+<tr><td>3–4 standard pods, hver med ca. 100°</td><td>Lavt strømforbruk, god oppløsning i hver retning, én tildekket pod blinder ikke resten, samme pod overalt</td><td>Flere monteringspunkter og kabler</td><td>Maskiner</td></tr>
+<tr><td>360-pod med fiskeøyeobjektiv (ca. 190°) pekende ned</td><td>Ett kamera ser alt rundt, enkel montering</td><td>Trenger høyere oppløsning (4–5 MP) og kraftigere AI-prosessor, ca. 0,5–1,5 W aktiv. Én tildekking blinder alt.</td><td>Brakketak, mast, container</td></tr>
+<tr><td>Doble fiskeøye (to sensorer rygg mot rygg)</td><td>Hel kule, også oppover</td><td>Dyrest, mest strøm, sømmen må rettes ut i programvaren</td><td>Spesielle behov</td></tr>
+</table>
+<p>360-poden kobles til samme sensorbuss, men bør ha 4–5 MP sensor og en prosessor med egen NPU. Den står i dvale og vekkes av radaren eller av andre pods, siden den bruker mer strøm. Bildet rettes ut til flere vanlige utsnitt før persongjenkjenning, og sentralen får utsnittet der personen står. Komponentvalg for 360-poden er ikke gjort og bør vurderes når standardpoden er testet.</p>
+<h3>Mekanikk og plassering</h3>
+<ul>
+<li><b>Kapsling:</b> aluminium eller glassfylt PA, IP67 og tåler høytrykksspyling. Vindu i herdet glass eller safir med vannavstøtende belegg. Elektronikken er støpt inn.</li>
+<li><b>Kabel:</b> fast innstøpt i poden (ingen kontakt å skru løs), lagt i stålflettet strømpe. Kontakten sitter bare i hubenden, inne i hovedenhetens kapsling.</li>
+<li><b>Montering:</b> sikkerhetsskruer og VHB-tape, eller magnetfeste med skruer i tillegg. Objektiv med liten frontåpning (pinhole) gjør poden vanskelig å se.</li>
+<li><b>Plassering:</b> én pod i kabinen bak frontruta som ser GPS-skjermen og dørene, og én under takkanten som ser GPS-mast og antenner. Synsfeltene bør overlappe, slik at én tildekket pod ikke gir blindsone. Andre steder kan være lyktehus, arbeidslys eller bak motvekten.</li>
+<li><b>Lokkekamera:</b> en synlig, enkel pod kan brukes som lokkemiddel ved siden av de diskrete.</li>
+</ul>
+<div class="note"><b>Trådløs pod som mulig variant</b>En batteridrevet pod med BLE eller Wi-Fi HaLow er enklere å montere, men kan jammes og må lades eller byttes. Den anbefales ikke som hovedløsning, bare som tillegg der kabel er umulig. Den må i så fall ha heartbeat, slik at stillhet gir alarm.</div>
+
+<h3>Personvern og regelverk</h3>
+<p>Kameraovervåking på anleggsplasser fanger opp personer og er behandling av personopplysninger. Podene skal være vanskelige å finne og sabotere, men selve overvåkingen skal være kjent. Følgende bør legges til grunn og kontrolleres mot Datatilsynets veiledning og juridisk rådgiver:</p>
+<ul>
+<li>Tydelig skilting om kameraovervåking på anlegget og på maskinene. Skjult kameraovervåking er sterkt begrenset.</li>
+<li>Opptak bare når maskinen er armert, altså utenfor arbeidstid. Kameraene er av når fører er pålogget.</li>
+<li>Ingen lyd i opptakene. Mikrofonen i hovedenheten analyserer lyd lokalt uten å lagre den.</li>
+<li>Kort lagringstid, kryptering, logget tilgang og egen vurdering av personvernkonsekvenser (DPIA).</li>
+<li>Drøfting med de ansattes tillitsvalgte, siden maskinene er en arbeidsplass.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">12</span>Kobling til maskinens CAN-buss</h2>
+<p class="lead">Ved å lytte på maskinens CAN-buss får enheten vite hva maskinen faktisk gjør: tenning, motorturtall, drivstoffnivå og om GPS-utstyret er tilkoblet. Det gir sikrere armering, færre falske alarmer og nye alarmtyper som drivstofftyveri og frakoblet GPS-skjerm.</p>
+<div class="fig">
+<svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<g fill="#fff" stroke="#9aa0a6"><rect x="10" y="40" width="120" height="64" rx="7"/><rect x="150" y="40" width="120" height="64" rx="7"/><rect x="290" y="40" width="120" height="64" rx="7"/><rect x="430" y="40" width="110" height="64" rx="7"/></g>
+<rect x="560" y="40" width="110" height="64" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.6"/>
+<g text-anchor="middle">
+<text x="70" y="64" font-weight="650" font-size="12">Maskinens CAN</text><text x="70" y="80" fill="#5d646d">J1939 / ISOBUS</text><text x="70" y="94" fill="#5d646d">250 eller 500 kbit/s</text>
+<text x="210" y="64" font-weight="650" font-size="12">Y-kabel</text><text x="210" y="80" fill="#5d646d">Diagnosekontakt,</text><text x="210" y="94" fill="#5d646d">ofte 9-pin Deutsch</text>
+<text x="350" y="64" font-weight="650" font-size="12">ISO1042</text><text x="350" y="80" fill="#5d646d">Isolert CAN FD-</text><text x="350" y="94" fill="#5d646d">transceiver</text>
+<text x="485" y="64" font-weight="650" font-size="12">MCP2518FD</text><text x="485" y="80" fill="#5d646d">CAN-kontroller,</text><text x="485" y="94" fill="#5d646d">kun lytting</text>
+<text x="615" y="64" font-weight="650" font-size="12">nRF54L15</text><text x="615" y="80" fill="#5d646d">Koprosessor</text><text x="615" y="94" fill="#5d646d">UART til nRF9151</text></g>
+<g stroke="#5d646d" stroke-width="1.2"><line x1="132" y1="72" x2="146" y2="72" marker-end="url(#g)"/><line x1="272" y1="72" x2="286" y2="72" marker-end="url(#g)"/><line x1="412" y1="72" x2="426" y2="72" marker-end="url(#g)"/><line x1="542" y1="72" x2="556" y2="72" marker-end="url(#g)"/></g>
+<text x="10" y="130" fill="#5d646d">Galvanisk skille mellom maskinen og enheten. Kontrolleren står i lyttemodus og kan ikke sende på bussen.</text>
+</svg>
+<div class="cap">Figur 10. Tilkobling til maskinens CAN-buss.</div>
+</div>
+<h3>Hva enheten leser</h3>
+<table>
+<tr><th style="width:30%">Signal (J1939)</th><th style="width:20%">PGN / SPN</th><th>Bruk</th></tr>
+<tr><td>Motorturtall</td><td class="mono">61444 / 190</td><td>Motoren går. Start uten gyldig førerkort gir alarm.</td></tr>
+<tr><td>Drivstoffnivå</td><td class="mono">65276 / 96</td><td>Fall i nivået med motoren av betyr trolig tapping. Gir alarm mens tyven holder på.</td></tr>
+<tr><td>Driftstimer</td><td class="mono">65253 / 247</td><td>Utnyttelse og fakturering av maskintimer.</td></tr>
+<tr><td>Batterispenning</td><td class="mono">65271 / 168</td><td>Helsesjekk, varsel om svakt batteri.</td></tr>
+<tr><td>Aktive feilkoder</td><td class="mono">65226</td><td>Enkel tilstandsovervåking i heartbeat.</td></tr>
+<tr><td>GPS-utstyrets meldinger</td><td>Produsentspesifikke</td><td>Skjerm og mottaker sender flere ganger i sekundet. Stopper meldingene, eller endres serienummeret, er utstyret koblet fra eller byttet.</td></tr>
+<tr><td>Hydraulikk, kjøring, setebryter</td><td>Varierer med produsent</td><td>Maskinen brukes, selv om GPS er jammet. Fører sitter i setet.</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">PGN/SPN-numrene er standard J1939. Mange maskinprodusenter har i tillegg egne meldinger, så hver maskintype må kartlegges.</p>
+<h3>Fordeler</h3>
+<ul>
+<li><b>Sikrere armering:</b> tenning, turtall og setebryter fra bussen er mer presist enn en egen tenningsledning.</li>
+<li><b>Kontroll på GPS-utstyret:</b> sterkere indikasjon på demontering enn kabelsløyfen alene, og avslører bytte av enhet.</li>
+<li><b>Drivstofftyveri:</b> et vanlig problem på anleggsplasser som ellers ikke oppdages før neste morgen.</li>
+<li><b>Flåtedata:</b> driftstimer, forbruk og feilkoder gjør produktet nyttig også når ingen stjeler noe.</li>
+<li><b>Enklere montering:</b> færre egne ledninger når signalene hentes fra bussen.</li>
+</ul>
+<h3>Risiko og tiltak</h3>
+<ul>
+<li><b>Lytt, ikke skriv.</b> Lyttemodusen er sikret i maskinvaren: TXD på transceiveren holdes fast høy (resessiv), og sendeutgangen på CAN-kontrolleren er ikke koplet til. Kontrolleren kjøres i tillegg i lyttemodus. Enheten kan derfor ikke forstyrre maskinen, selv med feil i fastvaren, og en angriper kan ikke bruke den som inngang til bussen. Enheten terminerer ikke bussen.</li>
+<li><b>Galvanisk skille</b> beskytter mot jordfeil og støy fra maskinen.</li>
+<li><b>Garanti og avtaler</b> må avklares med forhandlere og produsenter før tilkobling på nye maskiner.</li>
+<li><b>Startsperre</b> holdes utenfor de første versjonene. Den griper inn i maskinens sikkerhetssystemer og krever trolig vurdering etter maskindirektivet og ISO 13849.</li>
+</ul>
+<div class="note"><b>Alternativ uten kabel</b>Mange nyere maskiner har produsentens egen telematikk. Data som driftstimer, posisjon og drivstoff kan hentes fra skyen via standarden ISO 15143-3 (AEMP 2.0). Det er tregere og mindre detaljert enn bussen, og hjelper ikke når tyven kutter maskinens egen telematikk, men det kan supplere.</div>
+<h3>Endringer i hovedenheten (v1.1)</h3>
+<p>En koprosessor, Nordic nRF54L15, tas inn på hovedkortet. Den styrer CAN-kontrolleren og er samtidig Bluetooth-gateway for utstyrsbrikkene i kapittel 13. Den kobles til nRF9151 med UART, og for å frigjøre to pinner gjøres disse endringene:</p>
+<table>
+<tr><th style="width:16%">Pinne</th><th style="width:26%">Før</th><th>Etter</th></tr>
+<tr><td class="mono">P0.25</td><td class="mono">IMU_INT2</td><td><span class="mono">COP_UART_TX</span> til nRF54L15. IMU_INT2 settes til open drain og kobles på SYS_INT.</td></tr>
+<tr><td class="mono">P0.29</td><td class="mono">PWR_EN_SENS</td><td><span class="mono">COP_UART_RX</span> fra nRF54L15, også brukt til vekking. PWR_EN_SENS flyttes til I/O-utvideren.</td></tr>
+<tr><td>I/O-utvider</td><td>PCAL6408A (8)</td><td>PCAL6416A (16), med plass til PWR_EN_SENS, COP_RESET, CAN_PWR_EN og LORA_RXEN.</td></tr>
+<tr><td>Isolert forsyning</td><td>–</td><td>UCC12050 gir 5V_ISO til CAN-siden, slås av med CAN_PWR_EN.</td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">13</span>Utstyrsbrikker for utstyr uten strøm</h2>
+<p class="lead">Skuffer, hurtigkoblinger, pallegafler, tilhengere og annet påkoblingsutstyr får en liten, robust brikke med egen ID. Brikken sender korte Bluetooth-meldinger med svært lavt strømforbruk. Maskinenhetene, en gateway på brakka, servicebiler og telefoner med appen hører brikkene og sender videre. Batteriet kan byttes og skal vare i flere år.</p>
+<div class="fig">
+<svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<rect x="10" y="20" width="160" height="210" rx="10" fill="#e3f2f4" stroke="#23788a"/>
+<text x="26" y="42" font-weight="700" font-size="12.5">Utstyrsbrikker</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="26" y="54" width="128" height="34" rx="6"/><rect x="26" y="98" width="128" height="34" rx="6"/><rect x="26" y="142" width="128" height="34" rx="6"/><rect x="26" y="186" width="128" height="34" rx="6"/></g>
+<g text-anchor="middle"><text x="90" y="75">Graveskuff</text><text x="90" y="119">Hurtigkobling</text><text x="90" y="163">Pallegafler</text><text x="90" y="207">Tilhenger</text></g>
+<rect x="230" y="20" width="200" height="210" rx="10" fill="#f3f3ef" stroke="#9aa0a6"/>
+<text x="246" y="42" font-weight="700" font-size="12.5">Gateways med strøm</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="246" y="54" width="168" height="34" rx="6"/><rect x="246" y="98" width="168" height="34" rx="6"/><rect x="246" y="142" width="168" height="34" rx="6"/><rect x="246" y="186" width="168" height="34" rx="6"/></g>
+<g text-anchor="middle"><text x="330" y="75">Alarmenhet på maskin</text><text x="330" y="119">Gateway på brakka</text><text x="330" y="163">Servicebil</text><text x="330" y="207">Telefon med appen</text></g>
+<rect x="500" y="80" width="170" height="90" rx="8" fill="#fff" stroke="#1c2127"/>
+<text x="585" y="108" text-anchor="middle" font-weight="700" font-size="12.5">Mottakssentral</text><text x="585" y="128" text-anchor="middle" fill="#5d646d">Oversikt per anlegg,</text><text x="585" y="144" text-anchor="middle" fill="#5d646d">alarmer og varsler</text>
+<g stroke="#23788a" stroke-width="1.4" stroke-dasharray="5 4"><line x1="172" y1="125" x2="226" y2="125" marker-end="url(#h)"/></g>
+<g stroke="#5d646d" stroke-width="1.4"><line x1="432" y1="125" x2="496" y2="125" marker-end="url(#h)"/></g>
+<text x="199" y="115" text-anchor="middle" fill="#23788a">BLE</text>
+<text x="464" y="104" text-anchor="middle" fill="#5d646d">LTE-M,</text><text x="464" y="118" text-anchor="middle" fill="#5d646d">satellitt,</text><text x="464" y="146" text-anchor="middle" fill="#5d646d">LoRa</text>
+<text x="500" y="200" fill="#5d646d">Uten dekning: lagres og</text><text x="500" y="214" fill="#5d646d">sendes videre senere</text>
+</svg>
+<div class="cap">Figur 11. Brikkene er bladnoder som sover mest mulig. Enheter med strøm danner ryggraden i nettet.</div>
+</div>
+
+<h3>Produktfamilie</h3>
+<table>
+<tr><th style="width:18%">Variant</th><th style="width:26%">Radio</th><th style="width:22%">Batteri</th><th>Bruk</th></tr>
+<tr><td>Brikke S</td><td>Bluetooth LE med lang rekkevidde (Coded PHY), NFC</td><td>1/2 AA Li-SOCl2 (ER14250), ca. 1 200 mAh, byttbart</td><td>Skuffer, koblinger, gafler og annet smått utstyr</td></tr>
+<tr><td>Brikke L</td><td>Bluetooth LE + LoRa 868 MHz</td><td>AA Li-SOCl2, ca. 2 400–2 700 mAh, byttbart</td><td>Utstyr som ofte ligger langt fra maskiner og brakke</td></tr>
+<tr><td>Hengerenhet</td><td>LTE-M/NTN + GNSS + BLE</td><td>Lades fra 13-pins tilhengerkontakt, eget batteri</td><td>Tilhengere og verdifullt utstyr som flyttes på vei</td></tr>
+</table>
+
+<h3>Brikke S: maskinvare</h3>
+<table>
+<tr><th style="width:26%">Del</th><th style="width:28%">Komponent (forslag)</th><th>Funksjon</th></tr>
+<tr><td>Radio og prosessor</td><td>Nordic nRF54L15</td><td>Bluetooth LE med Coded PHY, NFC for utsjekk, kryptering og sikker nøkkellagring</td></tr>
+<tr><td>Bevegelse</td><td>ST LIS2DW12</td><td>Vekker brikken når utstyret flyttes, merker slag, vipping og fritt fall</td></tr>
+<tr><td>Løft</td><td>Bosch BMP585 barometer</td><td>Måler høydeendring når utstyret løftes (se kapittel 16)</td></tr>
+<tr><td>Fjerning</td><td>Lyssensor eller bryter mot underlaget</td><td>Alarm hvis brikken skrus løs</td></tr>
+<tr><td>Antenne</td><td>Brikkeantenne + NFC-spole i kortet</td><td>Plassert mot plastsiden av kapslingen</td></tr>
+<tr><td>Batteri</td><td>ER14250 i holder med O-ring</td><td>Tåler ca. −55 til +85 °C, byttes med verktøy</td></tr>
+</table>
+
+<h3>Melding, ID og sikkerhet</h3>
+<ul>
+<li><b>Unik ID:</b> hver brikke har en 64-bits ID fra fabrikk, et serienummer gravert med laser og en QR-kode. En hemmelig nøkkel legges inn ved produksjon.</li>
+<li><b>Melding:</b> kryptert ID, teller, status (i ro eller bevegelse, batteri, temperatur, fjernet) og en kryptografisk kontrollsum. Under 31 byte, så den passer i én Bluetooth-annonsering.</li>
+<li><b>Skjult for tyver:</b> ID-en som sendes ut, byttes jevnlig og kan bare tolkes av systemet. En tyv med Bluetooth-skanner kan ikke finne eller spore brikkene.</li>
+<li><b>Mot kopiering:</b> telleren og kontrollsummen gjør at en kopiert melding avvises.</li>
+</ul>
+
+<h3>Heartbeat og batteritid</h3>
+<table>
+<tr><th style="width:24%">Situasjon</th><th>Brikke S (BLE)</th><th>Brikke L (LoRa i tillegg)</th></tr>
+<tr><td>I ro</td><td>Hvert 10. sekund</td><td>BLE som S, LoRa hvert 30. minutt</td></tr>
+<tr><td>I bevegelse</td><td>Hvert 2. sekund</td><td>LoRa straks, deretter hvert 5. minutt</td></tr>
+<tr><td>Snittstrøm (anslag)</td><td>5–10 µA</td><td>10–20 µA</td></tr>
+<tr><td>Batteritid (anslag)</td><td>Teoretisk over 10 år, realistisk 5–8 år</td><td>Realistisk 4–7 år</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">Batteritiden er beregnet ut fra typiske verdier og må måles på prototype. Kulde, mye bevegelse og selvutlading trekker ned. Brikken sender varsel om lavt batteri lenge før det er tomt.</p>
+
+<h3>Nett og dårlig dekning</h3>
+<ul>
+<li><b>Brikkene videresender ikke for hverandre</b> som standard. Å lytte etter andre koster mye strøm. I stedet er det enhetene med strøm (maskiner, brakke, servicebiler) som danner nettet og sender videre, slik «Low Power Node» og «Friend» virker i Bluetooth Mesh.</li>
+<li><b>Maskinene hjelper hverandre</b> over LoRa, som beskrevet i kapittel 7. En brikke som høres av A kan nå sentralen via B og satellitt.</li>
+<li><b>Lagre og videresende:</b> uten dekning lagrer gatewayen observasjonene. Brikken lagrer også selv at den ble flyttet uten kontakt, og leverer det neste gang den blir hørt.</li>
+<li><b>Telefoner som gateway:</b> appen på ansattes telefoner kan høre brikker i bakgrunnen (frivillig) og øker dekningen langs veier og på andre anlegg.</li>
+<li><b>Ferdig nett som alternativ:</b> kommersielle nett som Wirepas Mesh er laget for batteridrevne brikker i stor skala og kan vurderes mot egen protokoll.</li>
+</ul>
+<div class="note"><b>Om Apple og Googles finnenettverk</b>Disse gir svært god dekning via telefoner, men varsler fremmede telefoner om en ukjent sporingsbrikke som følger med dem. En tyv vil dermed bli gjort oppmerksom på brikken. De passer derfor dårlig til tyverisikring, men kan vurderes for å finne igjen utstyr.</div>
+
+<h3>Funksjoner</h3>
+<table>
+<tr><th style="width:28%">Funksjon</th><th>Hvordan</th></tr>
+<tr><td>Oversikt per anlegg</td><td>Sentralen vet hvilke brikker som høres av hvilke gateways, og dermed hvilket anlegg utstyret er på.</td></tr>
+<tr><td>Tyverialarm om natten</td><td>Bevegelse utenfor arbeidstid, brikke utenfor anlegget eller brikke som ikke høres lenger gir alarm.</td></tr>
+<tr><td>Feil utstyr tatt med</td><td>På dagtid gir utstyr som forlater anlegget uten utsjekk et varsel til anleggsleder.</td></tr>
+<tr><td>Utsjekk og innsjekk</td><td>Hold telefonen mot brikken (NFC) og velg prosjekt i appen.</td></tr>
+<tr><td>Glemt igjen</td><td>Varsel når en maskin eller servicebil forlater anlegget uten utstyret som hører til den.</td></tr>
+<tr><td>Bruk av redskap</td><td>En skuff som beveger seg sammen med en maskin, er montert på den. Gir timer per redskap for vedlikehold og fakturering.</td></tr>
+<tr><td>Finn utstyret</td><td>Appen viser signalstyrken som «varmere og kaldere» for å finne en brikke i nærheten.</td></tr>
+</table>
+
+<h3>Mekanikk og montering</h3>
+<ul>
+<li><b>Størrelse:</b> Brikke S ca. 50 × 32 × 14 mm med ER14250-batteri.</li>
+<li><b>Kapsling:</b> glassfylt PA66 eller PPS, IP68 og slagfasthet IK10. Elektronikken støpes inn, batterirommet har O-ring og sikkerhetsskruer.</li>
+<li><b>Montering:</b> i en sveisbar stålholder med åpen plastfront, slik at radiosignalet kommer ut. Alternativt bolter med sikkerhetshode og lim. Plasseres i hulrom der den er beskyttet og vanskelig å se.</li>
+<li><b>Bytte av batteri:</b> med verktøy, og registreres i appen slik at sentralen vet når batteriet ble byttet.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">14</span>Felles sensorbuss og utvidelsesboks</h2>
+<p class="lead">Alle tilleggssensorer kobles til med samme kabel, samme kontakt og samme protokoll: en sensorbuss basert på CAN FD med M12-kontakter. Kamerapodene bruker også bussen. En utvidelsesboks gir flere porter, innganger for vanlige alarmsensorer og utganger for sirene og lys. Kamerahubben i kapittel 11 er en variant av denne boksen.</p>
+<div class="fig">
+<svg viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<rect x="10" y="90" width="120" height="70" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.6"/><text x="70" y="118" text-anchor="middle" font-weight="700" font-size="12">Hovedenhet</text><text x="70" y="136" text-anchor="middle" fill="#5d646d">Ekspansjonskontakt</text>
+<rect x="180" y="60" width="160" height="130" rx="7" fill="#fff" stroke="#1c2127"/>
+<text x="260" y="82" text-anchor="middle" font-weight="700" font-size="12">Utvidelsesboks</text>
+<text x="192" y="102">2 CAN FD-segmenter</text><text x="192" y="118">4 porter med eFuse</text><text x="192" y="134">8 overvåkede innganger</text><text x="192" y="150">2 reléutganger</text><text x="192" y="166">RS-485 (Modbus)</text><text x="192" y="182" fill="#5d646d">eMMC for bilder</text>
+<g stroke="#5d646d" stroke-width="1.3" fill="none"><path d="M132 125H176" marker-end="url(#k)" marker-start="url(#k)"/></g>
+<text x="154" y="116" text-anchor="middle" fill="#5d646d">UART</text>
+<line x1="342" y1="95" x2="660" y2="95" stroke="#23788a" stroke-width="2.2"/><line x1="342" y1="165" x2="660" y2="165" stroke="#23788a" stroke-width="2.2"/>
+<text x="350" y="86" fill="#23788a" font-weight="600">Segment 1: kameraer</text><text x="350" y="156" fill="#23788a" font-weight="600">Segment 2: sensorer</text>
+<g fill="#e3f2f4" stroke="#23788a"><rect x="410" y="104" width="100" height="34" rx="6"/><rect x="530" y="104" width="100" height="34" rx="6"/><rect x="380" y="174" width="86" height="34" rx="6"/><rect x="476" y="174" width="86" height="34" rx="6"/><rect x="572" y="174" width="86" height="34" rx="6"/></g>
+<g stroke="#23788a"><line x1="460" y1="95" x2="460" y2="104"/><line x1="580" y1="95" x2="580" y2="104"/><line x1="423" y1="165" x2="423" y2="174"/><line x1="519" y1="165" x2="519" y2="174"/><line x1="615" y1="165" x2="615" y2="174"/></g>
+<g text-anchor="middle"><text x="460" y="125">Kamerapod 1</text><text x="580" y="125">Kamerapod 2</text><text x="423" y="195">Dørkontakt</text><text x="519" y="195">Vibrasjon lås</text><text x="615" y="195">Sirene/strobe</text></g>
+<rect x="663" y="90" width="7" height="10" fill="#1c2127"/><rect x="663" y="160" width="7" height="10" fill="#1c2127"/>
+<text x="10" y="236" fill="#5d646d">Linje med T-stykker per segment, 120 Ω terminering i hver ende (svart). Én M12-kabel fører både strøm (9–36 V) og data.</text>
+<text x="10" y="252" fill="#5d646d">Brudd i ett segment tar ikke ut det andre.</text>
+</svg>
+<div class="cap">Figur 12. Sensorbuss med utvidelsesboks og to segmenter.</div>
+</div>
+<h3>Kabel og kontakt</h3>
+<table>
+<tr><th style="width:16%">M12-pinne</th><th style="width:22%">Signal</th><th>Merknad</th></tr>
+<tr><td>1</td><td class="mono">SHLD</td><td>Skjerm, koblet til jord i boksen</td></tr>
+<tr><td>2</td><td class="mono">V+</td><td>9–36 V, maks ca. 1 A per port gjennom eFuse med strømmåling</td></tr>
+<tr><td>3</td><td class="mono">GND</td><td>Jord for forsyning og signal</td></tr>
+<tr><td>4</td><td class="mono">CAN_H</td><td>CAN FD</td></tr>
+<tr><td>5</td><td class="mono">CAN_L</td><td>CAN FD</td></tr>
+</table>
+<p>Pinnefordelingen følger vanlig M12 A-kodet CAN-standard (CiA 303-1), så ferdige kabler, T-stykker og termineringsplugger kan brukes. Kabelen er skjermet PUR med 2 × 2 ledere, og en armert variant med stålflettet strømpe brukes der kabelen er eksponert. Segmentlengde inntil ca. 40 m ved 500 kbit/s i arbitreringsfasen og 2 Mbit/s i datafasen, som må verifiseres ved test.</p>
+<h3>Protokoll</h3>
+<ul>
+<li><b>Adresse:</b> hver node har en 64-bits fabrikk-ID. Ved oppstart får den en kort bussadresse av boksen, på samme måte som LSS i CANopen.</li>
+<li><b>Beskrivelse:</b> noden melder type (dørkontakt, vibrasjon, kamera, sirene, NFC-leser), versjon og funksjoner, så boksen og plattformen vet hva den kan.</li>
+<li><b>Heartbeat:</b> hver node sender heartbeat hvert sekund. Uteblir den i 3 sekunder, gir det sabotasjealarm.</li>
+<li><b>Autentisering:</b> meldinger har teller og en avkortet AES-CMAC med nodens nøkkel, slik AUTOSAR SecOC gjør det i biler. En falsk node eller avspilte meldinger blir avvist.</li>
+<li><b>Paring:</b> nye noder legges til med installatørappen. En ukjent node på bussen gir alarm.</li>
+<li><b>Alternativ:</b> CANopen FD (CiA 1301) kan vurderes som grunnlag, med sikkerhetslaget over.</li>
+</ul>
+<h3>Innganger for vanlige alarmsensorer</h3>
+<p>Utvidelsesboksen har åtte innganger med dobbel endemotstand (EOL), som er standard i alarmbransjen. Boksen måler motstanden og skiller mellom fem tilstander: normal, alarm, sabotasje, brudd og kortslutning. Dermed kan vanlige magnetkontakter, PIR-detektorer og glassbruddsdetektorer fra alarmgrossister kobles til uten egen elektronikk.</p>
+<table>
+<tr><th>Tilkobling</th><th>Bruk</th></tr>
+<tr><td>8 overvåkede innganger (dobbel EOL)</td><td>Magnetkontakter på dører og luker, PIR, glassbrudd, gjerdeporter</td></tr>
+<tr><td>2 reléutganger (maks 2 A)</td><td>Sirene, strobe, lys som tennes ved alarm</td></tr>
+<tr><td>RS-485 med Modbus RTU</td><td>Tredjeparts industrisensorer, for eksempel nivå i dieseltank</td></tr>
+<tr><td>4 sensorbussporter (M12)</td><td>Kamerapods og sensornoder</td></tr>
+</table>
+<h3>Sensornoder</h3>
+<p>Alle noder bygges over samme mal: en liten mikrokontroller med CAN FD (STM32G0B1), CAN FD-transceiver for 3,3 V (f.eks. TI TCAN3413), buck fra 9–36 V (LM5164, samme som i hovedenheten), sikkerhetsbrikke (ATECC608B) og M12 inn og ut for videre kobling. Eksempler på noder:</p>
+<table>
+<tr><th style="width:26%">Node</th><th>Innhold</th></tr>
+<tr><td>Dørnode</td><td>Magnetkontakt og akselerometer på låsen. Merker både åpning og forsøk på å kutte eller bryte låsen.</td></tr>
+<tr><td>Radarnode</td><td>Ekstra Acconeer A121 for rom eller områder hovedenheten ikke ser.</td></tr>
+<tr><td>Sirene- og strobenode</td><td>110 dB sirene og blinklys med egen sabotasjebryter.</td></tr>
+<tr><td>NFC-leser</td><td>Avarmering med kort ved døren til brakker og containere.</td></tr>
+<tr><td>Miljønode</td><td>Temperatur, fukt og vannlekkasje i brakker.</td></tr>
+</table>
+<div class="note"><b>Trådløse sensorer</b>Der kabel er umulig, kan Bluetooth-sensorer (for eksempel dørkontakter med batteri) pares med koprosessoren i hovedenheten. De bruker samme sikkerhetslag og heartbeat, men er mer sårbare for jamming og brukes bare som tillegg.</div>
+</section>
+
+<section class="cont">
+<h2><span class="n">15</span>Brakker og verktøycontainere</h2>
+<p class="lead">Arbeidsbrakker og verktøycontainere sikres med en stasjonær variant av samme alarmenhet. Hovedkortet er det samme, men kapsling, strømforsyning og sensorer er tilpasset bygg. Brakka blir samtidig anleggets faste gateway for utstyrsbrikkene og en sterk node i LoRa-nettet.</p>
+<table>
+<tr><th style="width:22%">Tema</th><th>Brakke</th><th>Verktøycontainer</th></tr>
+<tr><td>Strøm</td><td>230 V via innkapslet strømforsyning til 24 V (f.eks. Mean Well IRM-20-24), reservebatteri i enheten</td><td>Ofte uten strøm: 12 V LiFePO4-batteri (f.eks. 50 Ah), eventuelt med solcellepanel 20–30 W og MPPT-lader</td></tr>
+<tr><td>Antenne</td><td>Intern eller ekstern</td><td>Ekstern på taket er nødvendig, siden stål stenger radiosignalet. Kabelbrudd overvåkes som før.</td></tr>
+<tr><td>Dører og luker</td><td colspan="2">Magnetkontakter på EOL-innganger, dørnode med akselerometer på låsen</td></tr>
+<tr><td>Innvendig</td><td colspan="2">Radaren i hovedenheten ser rommet. Mikrofonen kjenner igjen glassbrudd og vinkelsliper.</td></tr>
+<tr><td>Kamera</td><td colspan="2">Én pod over døren ute, gjerne én inne rettet mot døren</td></tr>
+<tr><td>Sirene og lys</td><td colspan="2">Utendørs sirene 110 dB og strobe. Et innbrudd i container tar ofte flere minutter, og støy og lys får mange tyver til å gi opp.</td></tr>
+<tr><td>Verktøy inne</td><td colspan="2">Verktøykasser, laserinstrumenter og lignende får brikker. Enheten vet hva som er inne og varsler hvis noe forlater containeren om natten.</td></tr>
+<tr><td>Avarmering</td><td colspan="2">Appen eller NFC-kort ved døren, innenfor tidsvindu. Automatisk armering når dørene er låst etter arbeidstid.</td></tr>
+<tr><td>Ikke med</td><td colspan="2">CAN-buss, maskinens 12/24 V og kabelsløyfe rundt GPS-utstyr</td></tr>
+</table>
+<p>Med hovedenhet, utvidelsesboks og to kamerapods i dvale er forbruket anslått til ca. 25–50 mW. Et 12 V LiFePO4-batteri på 50 Ah (ca. 500 Wh brukbart) holder da i over ett år uten lading. Anslaget må måles på prototype, og solcelle gjør at batteriet kan være mindre.</p>
+</section>
+
+<section>
+<h2><span class="n">16</span>Detaljdesign per enhet</h2>
+<p>Dette kapitlet beskriver hver enhet med grensesnitt, strømforsyning, strømbudsjett og mekanikk, på samme nivå som hovedenheten i kapittel 10. Pinnenummer settes ved layout etter databladene. Tabellene viser hvilke signaler og hvilken periferienhet på prosessoren som brukes.</p>
+
+<h3>Kamerapod</h3>
+<div class="kv"><div>Prosessor</div><div>Himax WiseEye2 (Cortex-M55 + Ethos-U55)</div><div>Kretskort</div><div>Ca. 25 × 25 mm, 4 lag, MIPI-baner med kontrollert impedans</div><div>Kapsling</div><div>Ca. 30 × 30 × 22 mm, IP67, herdet glassvindu, kabel innstøpt</div></div>
+<table>
+<tr><th style="width:26%">Signal</th><th style="width:30%">Kobles til</th><th>Grensesnitt</th></tr>
+<tr><td>Bildedata</td><td>HM0360</td><td>MIPI CSI-2 (1 lane) eller parallell, etter modulvalg</td></tr>
+<tr><td>Bildebrikke-oppsett</td><td>HM0360</td><td>I2C, MCLK, reset, bevegelsesavbrudd</td></tr>
+<tr><td>Anti-masking</td><td>VCNL4040</td><td>I2C + avbrudd</td></tr>
+<tr><td>Bevegelse</td><td>LIS2DW12</td><td>I2C + avbrudd</td></tr>
+<tr><td>Signatur</td><td>ATECC608B</td><td>I2C</td></tr>
+<tr><td>Lagring</td><td>16 MB NOR-flash</td><td>QSPI eller SPI</td></tr>
+<tr><td>Sensorbuss</td><td>MCP2518FD + TCAN3413 (3,3 V)</td><td>SPI + avbrudd</td></tr>
+<tr><td>IR-belysning</td><td>AL8860 LED-driver, maks ca. 0,5 A</td><td>PWM-utgang, synkronisert med eksponering (FSTROBE)</td></tr>
+<tr><td>Klima ved vinduet</td><td>SHT40 temperatur og fukt</td><td>I2C</td></tr>
+<tr><td>Varme</td><td>Varmemotstand ca. 0,5 W</td><td>GPIO til MOSFET</td></tr>
+</table>
+<p><b>I2C-adresser:</b> VCNL4040 og standardutgaven av ATECC608B har begge adresse 0x60. Poden bruker derfor en utgave av ATECC608B med alternativ adresse (0x35), f.eks. TNGTLS eller TFLXTLS.</p>
+<p><b>Strøm:</b> 9–36 V fra bussen → buck til 3,3 V (LM5164) → LDO til 1,8 V (TLV75518P). Kjernespenningen til WiseEye2 lages etter Himax referansedesign. IR-LED får egen strømbane fra bussen gjennom driveren, så strømtoppene ikke forstyrrer bildebrikken. <b>Strømbudsjett:</b> se kapittel 11.</p>
+
+<h3>Utvidelsesboks (og kameravariant)</h3>
+<div class="kv"><div>Prosessor</div><div>STM32H563 (2 × FDCAN, SDMMC, kryptoakselerator)</div><div>Kretskort</div><div>Ca. 120 × 80 mm, 4 lag</div><div>Kapsling</div><div>IP67 med 4 M12-porter, kabelgjennomføringer for EOL-innganger, sabotasjebryter og lyssensor i lokket</div></div>
+<table>
+<tr><th style="width:26%">Signal</th><th style="width:30%">Kobles til</th><th>Grensesnitt</th></tr>
+<tr><td>Bussegment 1 og 2</td><td>2 × TCAN1462</td><td>FDCAN1, FDCAN2</td></tr>
+<tr><td>Portstrøm 1–4</td><td>4 × TPS1663 eFuse</td><td>GPIO (på/av), ADC (strøm), avbrudd (feil)</td></tr>
+<tr><td>Innganger 1–8</td><td>EOL-nettverk med vern</td><td>8 ADC-kanaler</td></tr>
+<tr><td>Reléutganger</td><td>2 relé med driver</td><td>GPIO</td></tr>
+<tr><td>Modbus</td><td>THVD1450</td><td>UART med retningsstyring</td></tr>
+<tr><td>Bildelagring</td><td>eMMC 8 GB</td><td>SDMMC, kryptert</td></tr>
+<tr><td>Hovedenhet</td><td>Ekspansjonskontakt</td><td>UART + EXP_INT + sløyfe</td></tr>
+<tr><td>Måling av innganger</td><td>REF3033 presisjonsreferanse</td><td>3V3_REF til EOL-delerne</td></tr>
+<tr><td>Sabotasje</td><td>Lokkbryter, OPT3001</td><td>GPIO, I2C</td></tr>
+</table>
+<p><b>Strøm:</b> 9–36 V fra hovedenheten (EXP_VIN) eller egen forsyning på rekkeklemme, ELLER-koplet med Schottky-dioder → eFuse per port → bussen. Buck LM5164 til 5 V (relé, CAN, RS-485) og TLV62569 til 3,3 V for logikk. <b>Strømbudsjett:</b> ca. 10–25 mW i dvale, opptil 1,5 W ved bildebehandling og opplasting.</p>
+<p>Kameravarianten er samme kort uten EOL-innganger og reléer, og med to porter.</p>
+
+<h3>Sensornode (mal)</h3>
+<div class="kv"><div>Prosessor</div><div>STM32G0B1 (FDCAN)</div><div>Kretskort</div><div>Ca. 30 × 40 mm, 2 lag</div><div>Kapsling</div><div>IP67 med M12 inn og ut, støpt</div></div>
+<table>
+<tr><th style="width:26%">Signal</th><th style="width:30%">Kobles til</th><th>Grensesnitt</th></tr>
+<tr><td>Buss</td><td>TCAN3413 (3,3 V)</td><td>FDCAN</td></tr>
+<tr><td>Nøkkel</td><td>ATECC608B</td><td>I2C</td></tr>
+<tr><td>Sensor</td><td>Avhenger av node</td><td>I2C, SPI, ADC eller GPIO</td></tr>
+<tr><td>Sabotasje</td><td>Lokkbryter</td><td>GPIO</td></tr>
+</table>
+<p><b>Strøm:</b> 9–36 V → buck til 3,3 V. <b>Strømbudsjett:</b> ca. 2–10 mW avhengig av sensor.</p>
+
+<h3>Brikke S</h3>
+<div class="kv"><div>Prosessor</div><div>Nordic nRF54L15</div><div>Kretskort</div><div>Ca. 28 × 22 mm, 4 lag (RF-tilpasning)</div><div>Kapsling</div><div>Ca. 50 × 32 × 14 mm, IP68, IK10</div></div>
+<table>
+<tr><th style="width:26%">Signal</th><th style="width:30%">Kobles til</th><th>Grensesnitt</th></tr>
+<tr><td>Bevegelse</td><td>LIS2DW12</td><td>I2C + INT1 (vekking)</td></tr>
+<tr><td>Løft</td><td>BMP585 barometer</td><td>Samme I2C + avbrudd, startes av akselerometeret</td></tr>
+<tr><td>Fjerning</td><td>Bryter mot underlaget eller fototransistor</td><td>GPIO med vekking eller ADC</td></tr>
+<tr><td>NFC</td><td>Spole i kretskortet</td><td>NFC-pinnene på nRF54L15</td></tr>
+<tr><td>2,4 GHz</td><td>Brikkeantenne med pi-nett</td><td>RF-pinne</td></tr>
+<tr><td>Klokke</td><td>32 MHz og 32,768 kHz krystall</td><td>XTAL-pinner</td></tr>
+</table>
+<p><b>Strøm:</b> ER14250 (3,6 V) → buck med svært lav hvilestrøm (TI TPS62840, 60 nA) til 1,8 V. En lekkasjefattig kondensator på 100–470 µF tar strømtoppene, siden Li-SOCl2-celler gir dårlig toppstrøm. <b>Strømbudsjett:</b> 5–10 µA i snitt (anslag).</p>
+<p><b>Løftdeteksjon:</b> når akselerometeret merker bevegelse, startes barometeret. Bosch oppgir støy på 0,08 Pa og at sensoren merker høydeendringer på noen få centimeter. Et trykkfall over noen sekunder betyr løft, mens vær gir langsomme endringer. Brikken melder da for eksempel «løftet ca. 1,2 m». Det skiller løft med kran eller maskin fra sleping, og lasting på bil fra flytting på bakken.</p>
+
+<h3>Brikke L</h3>
+<p>Som Brikke S, med SX1262-modul på SPI (SCK, MOSI, MISO, NSS, BUSY, DIO1, NRESET) og egen 868 MHz-antenne. AA Li-SOCl2-batteri. TPS62840 settes til 3,0 V, så LoRa-radioen får nok spenning til full sendeeffekt. LoRa-modulen slås helt av med en lastbryter (TPS22916) mellom sendingene. Sendetoppen på ca. 120 mA krever hybridkondensator (HLC) eller større buffer, og begrenset sendehyppighet. Kretskort ca. 40 × 25 mm. <b>Strømbudsjett:</b> 10–20 µA i snitt (anslag).</p>
+
+<h3>Hengerenhet</h3>
+<div class="kv"><div>Prosessor</div><div>nRF9151 (LTE-M/NB-IoT/NTN og GNSS) + nRF54L15 for BLE</div><div>Kretskort</div><div>Ca. 60 × 40 mm, 4 lag</div><div>Kapsling</div><div>IP67, skjult i hengerens ramme, interne antenner</div></div>
+<table>
+<tr><th style="width:26%">Signal</th><th style="width:30%">Kobles til</th><th>Grensesnitt</th></tr>
+<tr><td>Tilkoblet bil</td><td>13-pins kontakt, fast pluss og ladepluss</td><td>ADC via spenningsdeler og vern</td></tr>
+<tr><td>Bevegelse</td><td>LIS2DW12</td><td>I2C + avbrudd</td></tr>
+<tr><td>Lader</td><td>BQ25180</td><td>I2C</td></tr>
+<tr><td>BLE</td><td>nRF54L15</td><td>UART, hører brikker på utstyr som står på hengeren</td></tr>
+</table>
+<p><b>Strøm:</b> 12 V fra bilen når hengeren er koblet til → buck → lader → 2 × 18650. <b>Strømbudsjett:</b> ca. 0,3–1 mA i snitt parkert, som gir 6–12 måneder uten lading (anslag). <b>Alarm:</b> hengeren kobles til en bil eller flyttes om natten uten utsjekk.</p>
+
+<h3>Stasjonær enhet (brakke og container)</h3>
+<p>Hovedkort v1.1 og utvidelseskort i felles veggkapsling. Strømforsyning som i kapittel 15, takantenne med kabelovervåking, EOL-innganger for dører og luker, reléutgang til utendørs sirene og strobe. <b>Strømbudsjett:</b> ca. 25–50 mW med to kamerapods i dvale.</p>
+
+<h3>Oversikt over strøm</h3>
+<table>
+<tr><th>Enhet</th><th>Kilde</th><th class="num">Snitt i dvale (anslag)</th><th>Batteritid uten lading (anslag)</th></tr>
+<tr><td>Hovedenhet (maskin)</td><td>Maskinens 12/24 V + 18650</td><td class="num">ca. 7–15 mW</td><td>Ca. 2–4 uker på reservebatteri</td></tr>
+<tr><td>Kamerapod</td><td>Sensorbuss</td><td class="num">ca. 1–3 mW</td><td>–</td></tr>
+<tr><td>Utvidelsesboks</td><td>12/24 V</td><td class="num">ca. 10–25 mW</td><td>–</td></tr>
+<tr><td>Brikke S</td><td>ER14250</td><td class="num">5–10 µA</td><td>5–8 år</td></tr>
+<tr><td>Brikke L</td><td>AA Li-SOCl2</td><td class="num">10–20 µA</td><td>4–7 år</td></tr>
+<tr><td>Hengerenhet</td><td>2 × 18650, lades fra bilen</td><td class="num">0,3–1 mA</td><td>6–12 måneder</td></tr>
+<tr><td>Container uten strøm</td><td>12 V LiFePO4 50 Ah</td><td class="num">ca. 25–50 mW</td><td>Over 1 år</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">Alle forbrukstall er anslag basert på typiske verdier fra datablad og må måles på prototyper. Kulde reduserer batterikapasiteten.</p>
+
+<h3>Elektriske skjemaer (rev. 0.1)</h3>
+<p>Det er laget elektriske skjemaer for alle kretskortene i et eget dokument (A3): hovedenhet v1.1 (7 ark), kamerapod (2), utvidelsesboks (4), sensornode (1) og utstyrsbrikke S og L (1 hver), med stykkliste per kort. Skjemaene viser komponenter, grensesnitt og nettnavn på pinnenivå. Pinnenummer settes når produsentenes symboler hentes inn i leverandørens CAD-verktøy, og verdier merket * beregnes ved design.</p>
+<table>
+<tr><th style="width:30%">Funn og beslutninger fra skjemategningen</th><th>Konsekvens</th></tr>
+<tr><td>CAN-lytting sikret i maskinvare</td><td>TXD på ISO1042 holdes høy, og TXCAN på MCP2518FD er ikke koplet til. Isolert forsyning med UCC12050.</td></tr>
+<tr><td>3,3 V CAN-transceiver i pod og node</td><td>TCAN3413 i stedet for TCAN1462, så kamerapod og sensornode klarer seg med 3,3 V. Utvidelsesboksen beholder TCAN1462 på 5 V.</td></tr>
+<tr><td>Adressekollisjon i kamerapoden</td><td>ATECC608B med alternativ I2C-adresse.</td></tr>
+<tr><td>Felles buck for 9–36 V</td><td>LM5164 brukes i hovedenhet, kamerapod, utvidelsesboks og sensornode. Færre ulike komponenter.</td></tr>
+<tr><td>Måling av EOL-innganger</td><td>Presisjonsreferanse REF3033 og 0,1 % motstander gir et sikkert skille mellom normal, alarm, sabotasje, brudd og kortslutning.</td></tr>
+<tr><td>Overvåking av GNSS-antennen</td><td>Strøm til aktiv antenne måles over 10 Ω med komparator (GNSS_ANT_OK), siden alle ADC-kanaler på nRF9151 er i bruk.</td></tr>
+<tr><td>Ekspansjonskontakt</td><td>Låsende Molex Micro-Fit 3.0, 10 pinner, med sløyfe i lokk-kjeden.</td></tr>
+<tr><td>Utvidelsesboks med egen forsyning</td><td>To innganger ELLER-koplet, så boksen kan forsynes fra hovedenheten eller fra egen 12/24 V (brakke, container, mange porter).</td></tr>
+</table>
+<p>De nye komponentene (UCC12050, SHT40, REF3033, ekstra lastbryter og hybridkondensator i Brikke L) utgjør ca. 40–90 kr per maskin og ligger innenfor usikkerheten i komponentlisten og kostnadskalkylen, som derfor ikke er endret.</p>
+</section>
+
+<section>
+<h2><span class="n">17</span>Plattform, dashboard og app</h2>
+<p class="lead">Plattformen tar imot alt fra enhetene, vurderer det etter regler og sender alarmer videre til bedriftens egne folk, til appen og eventuelt til en alarmstasjon. Bedriften kan velge å håndtere alarmene selv i dashboardet, overlate dem til en alarmstasjon, eller kombinere: egen håndtering på dagtid og alarmstasjon om natten.</p>
+<div class="fig">
+<svg viewBox="0 0 680 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5d646d"/></marker></defs>
+<rect x="10" y="80" width="110" height="70" rx="7" fill="#e3f2f4" stroke="#23788a"/><text x="65" y="108" text-anchor="middle" font-weight="650" font-size="12">Enheter</text><text x="65" y="124" text-anchor="middle" fill="#5d646d">LTE-M, satellitt</text><text x="65" y="138" text-anchor="middle" fill="#5d646d">via gateways</text>
+<rect x="150" y="80" width="120" height="70" rx="7" fill="#fff" stroke="#1c2127"/><text x="210" y="104" text-anchor="middle" font-weight="650" font-size="12">Enhetsmottak</text><text x="210" y="120" text-anchor="middle" fill="#5d646d">MQTT/CoAP, DTLS</text><text x="210" y="134" text-anchor="middle" fill="#5d646d">Sjekker signatur</text>
+<rect x="300" y="80" width="120" height="70" rx="7" fill="#e6f0fb" stroke="#185fa5" stroke-width="1.6"/><text x="360" y="104" text-anchor="middle" font-weight="700" font-size="12">Regelmotor</text><text x="360" y="120" text-anchor="middle" fill="#5d646d">Timere, tilstander,</text><text x="360" y="134" text-anchor="middle" fill="#5d646d">eskalering</text>
+<rect x="300" y="170" width="120" height="44" rx="7" fill="#f3f3ef" stroke="#9aa0a6"/><text x="360" y="190" text-anchor="middle" font-weight="650">Hendelseslogg</text><text x="360" y="205" text-anchor="middle" fill="#5d646d">Bilder, signaturer</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="470" y="10" width="200" height="38" rx="6"/><rect x="470" y="56" width="200" height="38" rx="6"/><rect x="470" y="102" width="200" height="38" rx="6"/><rect x="470" y="148" width="200" height="38" rx="6"/><rect x="470" y="194" width="200" height="30" rx="6"/></g>
+<g text-anchor="middle"><text x="570" y="33">Dashboard for bedriften</text><text x="570" y="79">App (iOS og Android)</text><text x="570" y="125">Varsling: push, SMS, taleanrop</text><text x="570" y="171">Alarmstasjoner (SIA DC-09)</text><text x="570" y="213">API og integrasjoner</text></g>
+<g stroke="#5d646d" stroke-width="1.2" fill="none"><line x1="122" y1="115" x2="146" y2="115" marker-end="url(#m)"/><line x1="272" y1="115" x2="296" y2="115" marker-end="url(#m)"/><line x1="360" y1="152" x2="360" y2="166" marker-end="url(#m)"/><path d="M422 115H446V29H466" marker-end="url(#m)"/><path d="M446 75H466" marker-end="url(#m)"/><path d="M446 115V121H466" marker-end="url(#m)"/><path d="M446 115V167H466" marker-end="url(#m)"/><path d="M446 115V209H466" marker-end="url(#m)"/></g>
+</svg>
+<div class="cap">Figur 13. Plattformen. Enhetsmottak og regelmotor kjører redundant i datasenter i EU/EØS.</div>
+</div>
+<h3>Roller</h3>
+<table>
+<tr><th style="width:22%">Rolle</th><th>Kan</th></tr>
+<tr><td>Administrator</td><td>Brukere, anlegg, regler, avtaler med alarmstasjoner</td></tr>
+<tr><td>Operatør</td><td>Ta imot og håndtere alarmer i dashboardet, videresende til alarmstasjon</td></tr>
+<tr><td>Anleggsleder</td><td>Alarmer for egne anlegg i appen, avarmere hele anlegget, godkjenne avarmering utenfor arbeidstid</td></tr>
+<tr><td>Arbeider og fører</td><td>Avarmere maskiner og bygg de står ved, sjekke ut og inn utstyr. Får ikke alarmer.</td></tr>
+<tr><td>Installatør</td><td>Montere, pare sensorer og brikker, teste. Tidsbegrenset tilgang.</td></tr>
+<tr><td>Alarmstasjon (ekstern)</td><td>Mottar alarmer med bilde-lenke, kvitterer, melder status tilbake</td></tr>
+</table>
+<h3>Alarmflyt</h3>
+<table>
+<tr><th style="width:20%">Tilstand</th><th>Hva skjer</th></tr>
+<tr><td>Ny</td><td>Alarm vises øverst i køen med prioritet, bilde, kart og hendelser. Push og eventuelt SMS går til vakthavende.</td></tr>
+<tr><td>Behandles</td><td>En operatør eller anleggsleder har tatt saken. Ringeliste kan startes.</td></tr>
+<tr><td>Videresendt</td><td>Sendt til alarmstasjon. Stasjonens kvittering og vekterstatus vises.</td></tr>
+<tr><td>Avsluttet</td><td>Med årsak: reell hendelse, falsk alarm (dyr, glemt avarmering, vær, test) eller teknisk feil. Brukes til å forbedre reglene.</td></tr>
+</table>
+<h3>Eskalering (forslag)</h3>
+<ul>
+<li>Prioritet 1 som ingen har tatt innen 3 minutter, sendes automatisk til primær alarmstasjon.</li>
+<li>Jamming med flere tause enheter og sabotasje sendes alltid med en gang.</li>
+<li>Svarer ikke primærstasjonen, går alarmen til reservestasjonen.</li>
+<li>Push som ikke åpnes innen 2 minutter følges opp med SMS og taleanrop.</li>
+</ul>
+<h3>Sikkerhet og personvern</h3>
+<ul>
+<li>Innlogging med tofaktor, gjerne via bedriftens Microsoft Entra ID eller Google.</li>
+<li>Alt logges med hvem som gjorde hva og når, også avarmering og kvittering.</li>
+<li>Data lagres i EU/EØS, kryptert. Bilder har kort lagringstid og tilgangsstyring per anlegg.</li>
+</ul>
+<h3>Geofence (elektronisk gjerde)</h3>
+<p>Hvert anlegg får ett eller flere gjerder, tegnet på kart i dashboardet eller i appen. Forlater en maskin anlegget når den er armert, gir det alarm. I arbeidstid, når maskinen er avarmert, gir det bare forvarsel, siden maskiner flyttes av gode grunner.</p>
+<table>
+<tr><th style="width:34%">Situasjon</th><th>Hva skjer</th></tr>
+<tr><td>Maskinen forlater anlegget om natten (armert)</td><td>Alarm med prioritet 1 (kode GF), bilde fra kamerapod og posisjonsspor hvert 30. sekund. Sendes som innbrudd (BA) til alarmstasjon når kunden har det.</td></tr>
+<tr><td>Maskinen kjøres ut i arbeidstid (avarmert)</td><td>Forvarsel til anleggsleder, ingen alarm. En planlagt flytting kan registreres i appen på forhånd.</td></tr>
+<tr><td>Maskinen løftes på en henger</td><td>Alarm fra bevegelse og løft uten tenning, uavhengig av gjerdet. Gjerdet bekrefter når maskinen er ute.</td></tr>
+<tr><td>GNSS er jammet eller posisjonen er usikker</td><td>Ingen avgjørelse fra gjerdet. Jamming håndteres som i kapittel 5, og siste sikre posisjon vises.</td></tr>
+<tr><td>Maskinen flyttes mellom anlegg</td><td>Gjerder per anlegg, og en maskin kan høre til flere. Transportmodus i appen slår av gjerdet for en avtalt periode.</td></tr>
+</table>
+<ul>
+<li><b>Gjerdet:</b> en mangekant med buffer, standard 25 m, for GNSS-unøyaktighet. Enheten regnes som ute først etter to posisjoner på rad utenfor, og den oppgitte unøyaktigheten trekkes fra avstanden.</li>
+<li><b>I enheten:</b> hovedenheten har en kopi av anleggets gjerde (opptil 32 punkter), sendt og signert fra plattformen. Den merker utkjøring selv når mobilnettet er jammet, og melder via LoRa-naboer eller satellitt.</li>
+<li><b>Strøm:</b> posisjon måles når IMU eller CAN viser bevegelse, ellers sjelden (for eksempel hver time). GNSS står av mellom målingene.</li>
+<li><b>Brikker og henger:</b> brikkene har ikke GNSS og får posisjonen til gatewayen som hører dem. Hengerenheten har egen GNSS og bruker samme gjerder.</li>
+<li><b>Personvern:</b> posisjonen til en maskin i arbeidstid kan si noe om føreren. Detaljerte spor lagres bare ved alarm, og vurderes i DPIA-en.</li>
+</ul>
+<p>Første versjon av plattformkoden har geofence: gjerder per anlegg (API), posisjon i meldingsformatet (felt 12), regelmotor med de to første radene i tabellen over, visning i dashboardet og et scenario i simulatoren. Fastvareskjelettet har avstandsberegningen mot gjerdet.</p>
+</section>
+
+<section class="cont">
+<h2><span class="n">18</span>Avarmering når arbeiderne kommer</h2>
+<p class="lead">Anbefalingen er at appen er hovedløsningen: telefonen må være nær maskinen eller bygget over Bluetooth, og brukeren bekrefter med Face ID, fingeravtrykk eller PIN. NFC-kort er reserve for dem uten telefon. Tidsvindu og automatisk armering ligger under begge.</p>
+<table>
+<tr><th style="width:24%">Metode</th><th>Fordeler</th><th>Ulemper</th><th style="width:16%">Bruk</th></tr>
+<tr><td>App med Bluetooth-nærhet og biometri</td><td>To faktorer (telefon + person), krever at man står ved maskinen, alt logges, kan trekkes tilbake straks</td><td>Krever smarttelefon og app</td><td>Hovedløsning</td></tr>
+<tr><td>NFC-kort eller nøkkelbrikke</td><td>Raskt, virker med hansker og uten dekning</td><td>Kort kan lånes bort eller stjeles</td><td>Reserve, gjerne med PIN for brakker</td></tr>
+<tr><td>Førerinnlogging i maskinen</td><td>Ingen ekstra steg der maskinen har førerkort eller kode</td><td>Finnes ikke på alle maskiner, krever CAN-kartlegging</td><td>Tillegg der det finnes</td></tr>
+<tr><td>Tidsplan</td><td>Hindrer avarmering om natten</td><td>Alene for svakt</td><td>Ramme rundt alle metoder</td></tr>
+<tr><td>Geofence (telefonens posisjon)</td><td>Kan gi påminnelse når man kommer</td><td>Lett å lure, unøyaktig</td><td>Bare som påminnelse</td></tr>
+<tr><td>Avarmering fra dashboard</td><td>For leverandører og besøk uten app</td><td>Krever at noen er på vakt</td><td>Unntak, logges</td></tr>
+<tr><td>PIN-tastatur</td><td>Enkelt</td><td>Kan observeres, slites, må monteres</td><td>Ikke anbefalt på maskiner</td></tr>
+</table>
+<h3>Regler (forslag)</h3>
+<ul>
+<li>Avarmering tillates i arbeidstid (f.eks. 06:00–18:00) for brukere som er knyttet til prosjektet. Utenfor tidsvinduet må anleggsleder godkjenne i appen.</li>
+<li>Arbeidere avarmerer maskinen eller bygget de står ved. Anleggsleder kan avarmere hele anlegget.</li>
+<li>Automatisk armering når motoren er av, ingen kjent telefon har vært i nærheten på 30 minutter, og arbeidstiden er over. Appen viser en sjekkliste før manuell armering: utstyr på plass, dører lukket.</li>
+<li>Tvangskode: en egen PIN som ser ut som vanlig avarmering, men sender stille alarm. Vanlig i alarmbransjen for ran og trusler.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">19</span>Integrasjon med alarmstasjoner</h2>
+<p class="lead">Alarmer sendes til alarmstasjoner med SIA DC-09, som er det vanlige formatet for alarmoverføring over IP. Plattformen fungerer som én alarmsender mot hver stasjon. Stasjonen trenger dermed ikke egne løsninger for hver enhet, og bildene følger med som en sikker lenke.</p>
+<table>
+<tr><th style="width:24%">Stasjon</th><th>Hva vi vet</th><th style="width:26%">Neste steg</th></tr>
+<tr><td>Avarn Security</td><td>Alarmstasjonen er godkjent etter EN 50518:2019 og tar imot de fleste alarmsystemer på markedet.</td><td>Avklare tilkobling, kontonummer, hendelseskoder og instrukser</td></tr>
+<tr><td>Securitas</td><td>Har døgnbemannet alarmstasjon og FG-godkjent mottak av brannalarm. Om de tar tredjepartssystemer for innbrudd, er ikke oppgitt.</td><td>Spørre om tredjepartsmottak og krav</td></tr>
+<tr><td>Vaktcompaniet og andre</td><td>Ikke undersøkt i detalj.</td><td>Kontakte for krav og pris</td></tr>
+</table>
+<h3>Meldingsinnhold</h3>
+<ul>
+<li><b>Konto:</b> ett kontonummer per anlegg, sone per enhet eller sensor, slik at stasjonen ser hvor alarmen kommer fra.</li>
+<li><b>Kryptering:</b> DC-09 støtter AES-kryptering av meldingene. Kvittering fra stasjonen kreves for hver melding.</li>
+<li><b>Tilleggsfelt:</b> posisjon, kort beskrivelse og lenke til bilder og hendelse i plattformen.</li>
+<li><b>Overvåking:</b> periodisk testmelding og melding ved tapt og gjenopprettet forbindelse, med intervall avtalt med stasjonen.</li>
+<li><b>Redundans:</b> primær og reserve mottaker hos hver stasjon, og reserve stasjon ved behov.</li>
+</ul>
+<table>
+<tr><th>Hendelse i Varde</th><th class="mono">SIA</th><th class="mono">Contact ID</th></tr>
+<tr><td>Person bekreftet, utstyr i bevegelse, drivstofftyveri</td><td class="mono">BA</td><td class="mono">1130</td></tr>
+<tr><td>Sabotasje, anti-masking, kabelbrudd</td><td class="mono">TA</td><td class="mono">1137</td></tr>
+<tr><td>Armert / avarmert</td><td class="mono">CL / OP</td><td class="mono">3400 / 1400</td></tr>
+<tr><td>Forbindelse tapt / gjenopprettet (jamming)</td><td class="mono">YC / YK</td><td class="mono">1350 / 3350</td></tr>
+<tr><td>Lavt batteri / gjenopprettet</td><td class="mono">XT / XR</td><td class="mono">1302 / 3302</td></tr>
+<tr><td>Rutinetest</td><td class="mono">RP</td><td class="mono">1602</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">Kodene følger samme mapping som andre trådløse anleggssystemer bruker mot alarmstasjoner (f.eks. Reconeyez). Endelig liste avtales med hver stasjon.</p>
+<h3>Krav og sertifisering</h3>
+<ul>
+<li><b>Alarmstasjonen</b> er normalt sertifisert etter EN 50518.</li>
+<li><b>Overføringen</b> klassifiseres etter EN 50136 (alarmoverføringssystemer). To uavhengige kanaler, som LTE-M og satellitt, passer for de høyere kategoriene med to overføringsveier. Kategori må avtales.</li>
+<li><b>Forsikring:</b> forsikringsselskaper legger ofte FG-regler til grunn for innbruddsalarm i bygg. For brakker og containere bør det avklares om løsningen kan godkjennes, og om FG-sertifisert installatør kreves. For maskiner finnes det ikke tilsvarende standard, så kravene avtales med forsikringsselskapet.</li>
+</ul>
+<h3>Oppsett per stasjon</h3>
+<ol>
+<li>Avtale om mottak, pris per objekt og aksjonsplan.</li>
+<li>Kontonummer per anlegg og liste over hendelseskoder og soner.</li>
+<li>Instruks for hver hendelsestype: hvem som ringes, når vekter sendes.</li>
+<li>Test av alle hendelsestyper, kryptering, kvittering og bilde-lenke.</li>
+<li>Rutine for endringer når anlegg starter og avsluttes.</li>
+</ol>
+</section>
+
+<section>
+<h2><span class="n">20</span>Programvare, oppsett og idriftsetting</h2>
+<p class="lead">Systemet krever programvare på fire nivåer: fastvare i hver enhet, en plattform i skyen, apper og dashboard for brukerne, og verktøy for produksjon, oppsett og oppdatering. Kapitlet er skrevet som grunnlag for forespørsel til leverandører, siden utviklingen skal kjøpes inn.</p>
+<div class="fig">
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif" font-size="11">
+<rect x="10" y="10" width="660" height="62" rx="8" fill="#fbede7" stroke="#993c1d"/><text x="22" y="30" font-weight="700" font-size="12">Klienter</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="22" y="38" width="150" height="26" rx="5"/><rect x="184" y="38" width="150" height="26" rx="5"/><rect x="346" y="38" width="150" height="26" rx="5"/><rect x="508" y="38" width="150" height="26" rx="5"/></g>
+<g text-anchor="middle"><text x="97" y="55">Dashboard (web)</text><text x="259" y="55">App (iOS, Android)</text><text x="421" y="55">Installatørmodus i app</text><text x="583" y="55">Alarmstasjon (DC-09)</text></g>
+<rect x="10" y="84" width="660" height="62" rx="8" fill="#e6f0fb" stroke="#185fa5"/><text x="22" y="104" font-weight="700" font-size="12">Plattform</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="22" y="112" width="120" height="26" rx="5"/><rect x="152" y="112" width="120" height="26" rx="5"/><rect x="282" y="112" width="120" height="26" rx="5"/><rect x="412" y="112" width="120" height="26" rx="5"/><rect x="542" y="112" width="116" height="26" rx="5"/></g>
+<g text-anchor="middle"><text x="82" y="129">Enhetsmottak</text><text x="212" y="129">Regelmotor</text><text x="342" y="129">Data og logg</text><text x="472" y="129">API og varsling</text><text x="600" y="129">Oppdatering</text></g>
+<rect x="10" y="158" width="660" height="98" rx="8" fill="#e3f2f4" stroke="#23788a"/><text x="22" y="178" font-weight="700" font-size="12">Fastvare i enhetene</text>
+<g fill="#fff" stroke="#9aa0a6"><rect x="22" y="186" width="150" height="26" rx="5"/><rect x="184" y="186" width="150" height="26" rx="5"/><rect x="346" y="186" width="150" height="26" rx="5"/><rect x="508" y="186" width="150" height="26" rx="5"/><rect x="22" y="220" width="150" height="26" rx="5"/><rect x="184" y="220" width="150" height="26" rx="5"/><rect x="346" y="220" width="150" height="26" rx="5"/><rect x="508" y="220" width="150" height="26" rx="5"/></g>
+<g text-anchor="middle"><text x="97" y="203">Hovedenhet nRF9151</text><text x="259" y="203">Koprosessor nRF54L15</text><text x="421" y="203">Kamerapod WiseEye2</text><text x="583" y="203">Utvidelsesboks STM32H5</text><text x="97" y="237">Sensornoder STM32G0</text><text x="259" y="237">Brikker nRF54L15</text><text x="421" y="237">Hengerenhet nRF9151</text><text x="583" y="237">Bootloader og sikkerhet</text></g>
+<rect x="10" y="266" width="660" height="28" rx="8" fill="#f3f3ef" stroke="#9aa0a6"/><text x="340" y="284" text-anchor="middle">Verktøy: produksjon og nøkler, test og simulator, bygg og utrulling (CI/CD), overvåking av drift</text>
+</svg>
+<div class="cap">Figur 14. Programvaren i fire lag.</div>
+</div>
+
+<h3>Programvarekomponenter</h3>
+<table>
+<tr><th style="width:20%">Komponent</th><th>Hva den gjør</th><th style="width:26%">Teknologi (forslag)</th></tr>
+<tr><td>Hovedenhet</td><td>Sensorfusjon, alarmlogikk lokalt, heartbeat, kanalvalg (LTE-M, satellitt, LoRa), jamming-deteksjon, lokal lagring, LoRa-gruppenett</td><td>Zephyr via nRF Connect SDK, C</td></tr>
+<tr><td>Koprosessor</td><td>Bluetooth-gateway for brikker, lytting på CAN, maskinprofiler (J1939), service mot app</td><td>Zephyr via nRF Connect SDK</td></tr>
+<tr><td>Kamerapod</td><td>Bevegelsesdeteksjon, persongjenkjenning, anti-masking, signering av bilder</td><td>Himax SDK, TensorFlow Lite Micro, egen trent modell</td></tr>
+<tr><td>Utvidelsesboks</td><td>Busstyring, paring av noder, EOL-innganger, bildelager, ruting av bilder</td><td>Zephyr eller STM32Cube</td></tr>
+<tr><td>Sensornoder og brikker</td><td>Måling, heartbeat, autentisering, strømsparing, løftdeteksjon</td><td>Zephyr, felles bibliotek for protokoll og sikkerhet</td></tr>
+<tr><td>Enhetsmottak</td><td>Tar imot meldinger, sjekker signatur og teller, svarer med kvittering</td><td>CoAP eller MQTT over DTLS/TLS, CBOR-kodede meldinger</td></tr>
+<tr><td>Regelmotor</td><td>Timer per enhet, tilstander, sammenstilling av signaler fra gruppen, eskalering</td><td>Hendelsesdrevet tjeneste med køsystem</td></tr>
+<tr><td>Data og logg</td><td>Kunder, anlegg, enheter, hendelser, bilder, revisjonslogg</td><td>Relasjonsdatabase + objektlager for bilder, i EU/EØS</td></tr>
+<tr><td>API og varsling</td><td>API for dashboard og app, push, SMS, taleanrop, integrasjon mot alarmstasjoner (SIA DC-09)</td><td>REST eller GraphQL, varslingstjenester</td></tr>
+<tr><td>Dashboard</td><td>Alarmkø, sakshåndtering, kart, oversikt, administrasjon</td><td>Webapplikasjon</td></tr>
+<tr><td>App</td><td>Alarmer for ledere, avarmering, utsjekk, installatørmodus</td><td>Én kodebase for iOS og Android (f.eks. Flutter eller React Native) med Bluetooth og NFC</td></tr>
+<tr><td>Oppdatering</td><td>Signerte fastvareoppdateringer til alle enheter, trinnvis utrulling</td><td>MCUboot med to bilder, FOTA over LTE-M</td></tr>
+<tr><td>Produksjonsverktøy</td><td>Legger inn ID og nøkler, tester kort, registrerer enheten i plattformen</td><td>Testjigg og egen programvare</td></tr>
+</table>
+
+<h3>Oppsett og idriftsetting</h3>
+<p>Oppsettet skal kunne gjøres av en montør med appen, uten PC. Appen kobler seg til enheten over Bluetooth og fører montøren gjennom stegene.</p>
+<ol>
+<li><b>I fabrikken:</b> hver enhet får unik ID og nøkler i sikkerhetsbrikken, testes og registreres i plattformen. QR-kode og serienummer graveres på kapslingen.</li>
+<li><b>I dashboardet:</b> administrator oppretter kunde, anlegg og objekter (maskiner, brakker, containere, hengere) og velger regler og arbeidstid.</li>
+<li><b>Paring:</b> montøren skanner QR-koden, knytter enheten til riktig objekt og velger miljøprofil for den. Enheten henter konfigurasjonen fra plattformen.</li>
+<li><b>Radio:</b> appen viser signalstyrke for LTE-M, satellitt, LoRa til naboer og GNSS, og varsler om antenneplasseringen er dårlig.</li>
+<li><b>Sensorer:</b> radaren lærer den tomme scenen. Kameraene rettes inn med livebilde og lagrer referansebilde. Noder på sensorbussen oppdages og pares. EOL-innganger måles og lagres.</li>
+<li><b>Maskindata:</b> koprosessoren lytter på CAN og foreslår maskinprofil. Montøren bekrefter at GPS-utstyret er gjenkjent.</li>
+<li><b>Brikker:</b> hver brikke leses med NFC og knyttes til utstyret med navn og bilde.</li>
+<li><b>Test:</b> gangtest av radar og kamera, sabotasjetest av lokk og kabler, testalarm helt fram til alarmstasjonen i testmodus.</li>
+<li><b>Idriftsetting:</b> enheten armeres. Plattformen følger ekstra med det første døgnet og lager en monteringsrapport automatisk.</li>
+</ol>
+
+<h3>Konfigurasjon</h3>
+<ul>
+<li>All konfigurasjon (tider, terskler, miljøprofil per enhet, regler, kontaktlister, kobling til alarmstasjon) ligger i plattformen og er versjonert.</li>
+<li>Enheten bekrefter hvilken versjon den kjører, så dashboardet viser om en endring har nådd fram.</li>
+<li>Lokale endringer på enheten er bare mulig i autentisert servicemodus og blir logget.</li>
+</ul>
+
+<h3>Oppdatering av all fastvare</h3>
+<p>Alle brikker som har egen fastvare og kan oppdateres, skal kunne oppdateres over luft gjennom plattformen, også fastvare fra underleverandører som Nordic, u-blox, Himax og leverandørene av hyllevare. Plattformen holder oversikt over hvilken versjon hver brikke i hver enhet kjører, og ruller ut nye versjoner når produsenten kommer med sikkerhetsrettinger eller forbedringer.</p>
+<table>
+<tr><th style="width:18%">Enhet</th><th style="width:24%">Fastvare</th><th>Hvordan den oppdateres</th></tr>
+<tr><td rowspan="3">Hovedenhet</td><td>Vår applikasjon (nRF9151)</td><td>Over LTE-M til reserveområde i flash. MCUboot sjekker signaturen og går tilbake ved feil.</td></tr>
+<tr><td>LTE-modemets fastvare (Nordic)</td><td>Delta-oppdatering fra én bestemt versjon til den neste, eller full oppdatering (ca. 2,1 MB) fra hvilken som helst versjon. Full oppdatering krever minst 4 MB ekstern flash, som hovedenheten har (64 Mbit).</td></tr>
+<tr><td>Koprosessor nRF54L15</td><td>Lastes ned av hovedenheten og overføres over UART, med egen bootloader</td></tr>
+<tr><td>GNSS-mottaker</td><td>u-blox MAX-M10S</td><td>Etter u-blox sin metode via vertsprosessoren. Må avklares med u-blox.</td></tr>
+<tr><td>Radar og IMU</td><td>A121 og LSM6DSV16X</td><td>Har ikke egen fastvare. Radaralgoritmen og IMU-ens maskinlæringsoppsett ligger i vår fastvare og oppdateres med den.</td></tr>
+<tr><td>Sikkerhetsbrikke</td><td>ATECC608B</td><td>Kan ikke oppdateres, med vilje. Nøklene er låst.</td></tr>
+<tr><td>Kamerapod</td><td>WiseEye2-fastvare og AI-modell</td><td>Via utvidelsesboksen over sensorbussen. AI-modellen er en egen signert fil, slik at en bedre modell kan sendes ut uten ny fastvare.</td></tr>
+<tr><td>Utvidelsesboks</td><td>STM32H563</td><td>Via hovedenheten, med to banker i flash</td></tr>
+<tr><td>Sensornoder</td><td>STM32G0B1</td><td>Fra utvidelsesboksen over sensorbussen</td></tr>
+<tr><td>Brikker</td><td>nRF54L15</td><td>Over Bluetooth fra gateway eller app, sjelden og bare ved behov, siden det koster batteri</td></tr>
+<tr><td>Hengerenhet</td><td>nRF9151 og nRF54L15</td><td>Som hovedenheten, helst når hengeren er koblet til bil og har strøm</td></tr>
+<tr><td rowspan="3">Hyllevare</td><td>Trackere (f.eks. Teltonika)</td><td>Leverandørens skytjeneste (Teltonika FOTA WEB) med API, som plattformen kan styre</td></tr>
+<tr><td>Alarmsystem for bygg (f.eks. Ajax)</td><td>Automatisk fra leverandørens sky. Sentralen laster ned i bakgrunnen og installerer når systemet er avarmert.</td></tr>
+<tr><td>Brikker og kameraer fra andre</td><td>Leverandørens app eller verktøy. Støtte og metode må avklares før valg av produkt.</td></tr>
+</table>
+<h3>Rutiner for oppdatering</h3>
+<ul>
+<li><b>Versjonsoversikt:</b> plattformen har en liste over alle brikker og versjoner i hver enhet (SBOM). Dashboardet viser hvem som ligger etter.</li>
+<li><b>Overvåking av leverandører:</b> sikkerhetsvarsler og nye versjoner fra Nordic, ST, Himax, u-blox og leverandører av hyllevare følges fast.</li>
+<li><b>Utgivelsespakker:</b> fastvare som er testet sammen, gis ut samlet med et eget versjonsnummer. Det hindrer at en ny modemversjon kommer ut sammen med en applikasjon som ikke er testet med den.</li>
+<li><b>Test før utrulling:</b> på testbenk med ekte maskinvare, så på egne testenheter.</li>
+<li><b>Trinnvis utrulling:</b> først en liten andel, så resten. Utrullingen stoppes automatisk hvis feilraten øker.</li>
+<li><b>Ikke svekke vernet:</b> oppdatering skjer helst i arbeidstid når enheten er avarmert. Må det skje om natten, varsler plattformen seg selv om planlagt pause, naboene dekker over LoRa, og pausen holdes til noen sekunder for applikasjonen. Modemoppdatering tar lenger tid og legges til arbeidstid.</li>
+<li><b>Ingen nedgradering:</b> enhetene godtar ikke eldre versjoner enn den de har (teller i bootloaderen). Det hindrer at en angriper legger inn en gammel versjon med kjent svakhet.</li>
+<li><b>Signering:</b> all fastvare signeres med nøkler i HSM. Fastvare fra underleverandører kontrolleres mot deres signatur før den pakkes og signeres av oss.</li>
+</ul>
+<h3>Krav til maskinvaren</h3>
+<ul>
+<li>Bootloader i alle prosessorer som kan oppdateres, og plass til to versjoner (to banker eller ekstern flash).</li>
+<li>Ekstern flash på minst 4 MB i hovedenheten og hengerenheten for full modemoppdatering. Dagens design har 8 MB.</li>
+<li>Kunne gjenopprette enheten via sensorbussen eller UART hvis en oppdatering feiler, uten å åpne kapslingen.</li>
+</ul>
+<p>Leverandøren som utvikler programvaren, skal levere oppdateringsmekanismen for alle brikkene og følge opp underleverandørenes oppdateringer i hele støtteperioden. Det er også et krav i CRA. Arbeidet ligger i posten «Oppdatering, produksjon og verktøy» i estimatet.</p>
+
+
+<h3>Sikkerhet og regelverk</h3>
+<ul>
+<li><b>Secure boot</b> og signert fastvare på alle enheter. Signeringsnøkler oppbevares i maskinvaresikkerhetsmodul (HSM).</li>
+<li><b>Unike nøkler</b> per enhet, ingen felles passord. Kryptert transport (DTLS/TLS) og signerte meldinger.</li>
+<li><b>Radioutstyrsdirektivet (RED):</b> i EU har cybersikkerhetskravene vært obligatoriske for CE-merking siden 1. august 2025, med EN 18031 som standard. Hvordan dette gjelder i Norge må avklares.</li>
+<li><b>Cyber Resilience Act (CRA):</b> rapportering av utnyttede sårbarheter gjelder i EU fra 11. september 2026, og full anvendelse er fra 11. desember 2027. Regelverket er EØS-relevant, men ikke tatt inn i norsk rett ennå. Det krever sikker design, håndtering av sårbarheter og sikkerhetsoppdateringer i hele støtteperioden.</li>
+<li><b>Sikkerhetstest:</b> uavhengig penetrasjonstest av enheter, app og plattform før lansering.</li>
+</ul>
+
+<h3>Test</h3>
+<ul>
+<li><b>Simulator:</b> logikken i demoen kan videreutvikles til en referansemodell som plattformen og fastvaren testes mot.</li>
+<li><b>Maskinvare i testløkke:</b> automatiske tester med ekte kort, jammer i skjermet rom, strømkutt og kabelbrudd.</li>
+<li><b>Pilot:</b> 10–20 maskiner på 2–3 anlegg i minst tre måneder, også om vinteren.</li>
+</ul>
+
+<h3>Kjøpe eller bygge</h3>
+<table>
+<tr><th style="width:26%">Del</th><th>Anbefaling</th></tr>
+<tr><td>Fastvare og alarmlogikk</td><td>Bygges. Dette er kjernen i produktet og må eies.</td></tr>
+<tr><td>Enhetsmottak og meldingskø</td><td>Kan bygges på en etablert IoT-tjeneste fra en stor skyleverandør, i EU-region</td></tr>
+<tr><td>Oppdatering og posisjon for nRF91</td><td>Nordic sin skytjeneste (nRF Cloud) kan vurderes i starten</td></tr>
+<tr><td>Varsling (push, SMS, tale)</td><td>Kjøpes som tjeneste</td></tr>
+<tr><td>Kobling mot alarmstasjoner</td><td>Bygges eller kjøpes som ferdig DC-09-modul</td></tr>
+<tr><td>Dashboard og app</td><td>Bygges, siden flyten er spesiell for dette produktet</td></tr>
+</table>
+
+<h3>Faser og grovt estimat</h3>
+<table>
+<tr><th style="width:18%">Fase</th><th>Innhold</th><th class="num" style="width:16%">Varighet</th></tr>
+<tr><td>1. Grunnmur</td><td>Fastvare for hovedenhet, plattformkjerne (mottak, regelmotor, data), enkel app med alarmer og avarmering, enkelt dashboard, oppdatering over luft, produksjonsverktøy</td><td class="num">6–9 mnd</td></tr>
+<tr><td>2. Utvidelse</td><td>Kamerapods og AI-modell, utvidelsesboks og sensorbuss, brikker, CAN og maskinprofiler, installatørmodus</td><td class="num">6–9 mnd</td></tr>
+<tr><td>3. Drift</td><td>Kobling mot alarmstasjoner med test, brakke- og containervariant, sikkerhetstest, pilot og forbedringer</td><td class="num">4–6 mnd</td></tr>
+</table>
+<table>
+<tr><th>Område</th><th class="num">Månedsverk (anslag)</th></tr>
+<tr><td>Fastvare hovedenhet og koprosessor</td><td class="num">16–28</td></tr>
+<tr><td>Fastvare kamerapod og AI-modell</td><td class="num">8–14</td></tr>
+<tr><td>Fastvare utvidelsesboks, noder og brikker</td><td class="num">10–17</td></tr>
+<tr><td>Plattform og integrasjoner</td><td class="num">16–28</td></tr>
+<tr><td>Dashboard</td><td class="num">6–10</td></tr>
+<tr><td>App inkludert installatørmodus</td><td class="num">12–20</td></tr>
+<tr><td>Oppdatering, produksjon og verktøy</td><td class="num">4–8</td></tr>
+<tr><td>Test, sikkerhet og pilot</td><td class="num">8–14</td></tr>
+<tr><td>Arkitektur og prosjektledelse</td><td class="num">8–12</td></tr>
+<tr><td><b>Sum</b></td><td class="num"><b>88–151</b></td></tr>
+</table>
+<p>Med innleid utvikling til 1 300–1 600 kr per time og ca. 140 timer per månedsverk, blir det grovt 16–34 millioner kroner. Anslaget er svært usikkert og må erstattes av tilbud. Det kan reduseres ved å starte med fase 1 for maskiner alene, og ved å bruke ferdige tjenester der det går.</p>
+
+<h3>Forespørsel til leverandører</h3>
+<p>Forespørselen bør bestå av dette dokumentet som kravgrunnlag, i tillegg til følgende:</p>
+<ul>
+<li><b>Eierskap:</b> bedriften eier kildekode, modeller og dokumentasjon. Kode deponeres hvis leverandøren beholder noe.</li>
+<li><b>Oppdateringer:</b> mekanisme for oppdatering over luft av all fastvare som kan oppdateres, også fra underleverandører, og oppfølging av deres sikkerhetsrettinger i hele støtteperioden.</li>
+<li><b>Leveranser i faser</b> med milepæler og akseptansekriterier, for eksempel at alarm ved jamming når sentralen innen 5 minutter i test.</li>
+<li><b>Sikkerhetskrav:</b> secure boot, nøkkelhåndtering, penetrasjonstest, programvareliste med versjoner (SBOM) og rutine for sårbarheter i tråd med CRA.</li>
+<li><b>Drift og vedlikehold:</b> avtale med oppetid for plattformen, vaktordning døgnet rundt, responstid ved feil og hvor lenge sikkerhetsoppdateringer leveres.</li>
+<li><b>Dokumentasjon:</b> arkitektur, API, testrapporter og brukerveiledninger for montør, operatør og bruker.</li>
+<li><b>Leverandørtyper:</b> det kan være naturlig å dele mellom en leverandør av elektronikk og fastvare med erfaring fra Nordic og lavstrøm, og en leverandør av plattform og app. Arkitektansvaret bør da ligge hos én part.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">21</span>Marked og hyllevare</h2>
+<p class="lead">Det finnes produkter som dekker deler av løsningen, men ingen funnet som kombinerer alarm på selve maskinen med vekt på GPS-utstyret, motstand mot jamming via flere kanaler og naboer, CAN-buss, utstyrsbrikker, brakkesikring og eget alarmmottak. Søket er ikke uttømmende.</p>
+<table>
+<tr><th style="width:17%">Produkt</th><th>Hva det gjør</th><th style="width:32%">Mangler mot dette designet</th></tr>
+<tr><td>ABAX (norsk)</td><td>Sporing av maskiner og hengere med varsel når utstyr flyttes uten godkjenning. Bluetooth-brikke for verktøy (Locator). Henter data fra produsentenes telematikk uten egen maskinvare (Smart Connect).</td><td>Ingen deteksjon av personer ved maskinen, ikke bygget for jamming, ikke rettet mot GPS-utstyret</td></tr>
+<tr><td>Trackunit</td><td>Telematikk for anleggsmaskiner, Bluetooth-brikken Kin for småutstyr, egen løsning mot tyveri</td><td>Som ABAX, mer flåtestyring enn alarm</td></tr>
+<tr><td>Reconeyez</td><td>Trådløse PIR-detektorer med kamera for byggeplass. KI skiller mennesker, kjøretøy og dyr. Opptil 400 dagers batteri, IP67, −40 til +60 °C. Sender til alarmstasjon med SIA DC-09.</td><td>Står på stativ eller vegg, ikke på maskin. Ingen CAN, brikker eller kabelsløyfe. Jamming ikke beskrevet.</td></tr>
+<tr><td>Ajax MotionCam Outdoor</td><td>Trådløs utendørs detektor med fotoverifisering, IR-lys, anti-masking og varsel ved nedtaking. Opptil 3 års batteri. Kobles til alarmstasjoners programvare.</td><td>Krever Ajax-sentral. IP56 og −25 °C passer bedre på brakker enn maskiner.</td></tr>
+<tr><td>Pakker fra GPS-forhandlere</td><td>Eksempel fra en Trimble-forhandler: sporing av mottakeren, forensisk merking (SmartWater), hurtigfester og sikkerhetskopi av data</td><td>Hjelper med å finne igjen og skremme, gir ikke alarm under tyveriet</td></tr>
+</table>
+<h3>Hyllevare som kan brukes i løsningen</h3>
+<ul>
+<li><b>Prototyper:</b> Nordic Thingy:91 X og nRF9151 DK, Acconeer XM125 radarmodul, Seeed Grove Vision AI V2 (samme AI-brikke som kamerapoden), ferdige SX1262-moduler.</li>
+<li><b>Sensorer for bygg:</b> vanlige magnetkontakter, PIR og glassbruddsdetektorer fra alarmgrossister på EOL-inngangene i utvidelsesboksen.</li>
+<li><b>Kabling:</b> M12 CAN-kabler, T-stykker og termineringsplugger etter CiA 303-1.</li>
+<li><b>Plattform:</b> ferdige skytjenester for enhetsmottak, oppdatering og varsling (kapittel 20).</li>
+</ul>
+<h3>Strategiske valg</h3>
+<table>
+<tr><th style="width:22%">Valg</th><th>Fordeler</th><th>Ulemper</th></tr>
+<tr><td>Kombinere ferdige produkter</td><td>Raskt og rimelig å starte</td><td>Svakere vern av GPS-utstyret mot sofistikerte tyver, flere apper, lite kontroll</td></tr>
+<tr><td>Bygge alt selv</td><td>Full kontroll og eget produkt</td><td>Høyest kostnad og risiko, lengst tid</td></tr>
+<tr><td>Mellomløsning</td><td>Bygger bare det som ikke finnes: maskinenheten og plattformen. Kjøper brikker og brakkesikring.</td><td>Krever åpne grensesnitt hos leverandørene, ikke undersøkt</td></tr>
+</table>
+<p>Anbefaling: test et par av produktene i en kort pilot, og snakk med ABAX, Trackunit og Reconeyez om jamming, GPS-utstyr og åpne grensesnitt før et stort utviklingsløp startes. En av dem kan være en mulig partner.</p>
+</section>
+
+<section>
+<h2><span class="n">22</span>Komponentliste</h2>
+<p>Grovt anslag for komponentkost er 1 250–2 300 kr per enhet i små serier. Prisene er omtrentlige og ikke kontrollert mot leverandør.</p>
+<table>
+<tr><th>Funksjon</th><th>Komponent</th><th class="num">Antall</th><th class="num">Ca. kr/stk</th></tr>
+<tr><td>Prosessor og LTE/NTN</td><td>Nordic nRF9151 SiP</td><td class="num">1</td><td class="num">180–250</td></tr>
+<tr><td>SIM</td><td>Loddet SIM/eSIM (MFF2)</td><td class="num">1</td><td class="num">20–50</td></tr>
+<tr><td>Radar</td><td>Acconeer A121 + 24 MHz krystall</td><td class="num">1</td><td class="num">60–100</td></tr>
+<tr><td>LoRa</td><td>SX1262-modul</td><td class="num">1</td><td class="num">60–100</td></tr>
+<tr><td>GNSS</td><td>u-blox MAX-M10S</td><td class="num">1</td><td class="num">120–160</td></tr>
+<tr><td>IMU</td><td>ST LSM6DSV16X</td><td class="num">1</td><td class="num">30–45</td></tr>
+<tr><td>Mikrofon</td><td>Infineon IM69D130</td><td class="num">1</td><td class="num">15–30</td></tr>
+<tr><td>Lyssensor</td><td>TI OPT3001</td><td class="num">1</td><td class="num">15–25</td></tr>
+<tr><td>Sikkerhetsbrikke</td><td>Microchip ATECC608B</td><td class="num">1</td><td class="num">8–15</td></tr>
+<tr><td>Flash 64 Mbit</td><td>Macronix MX25R6435F</td><td class="num">1</td><td class="num">15–25</td></tr>
+<tr><td>I/O-utvider</td><td>NXP PCAL6408A</td><td class="num">1</td><td class="num">8–15</td></tr>
+<tr><td>Buck 12/24 V → 5 V</td><td>TI LM5164</td><td class="num">1</td><td class="num">15–25</td></tr>
+<tr><td>Lader med power path</td><td>TI BQ25180</td><td class="num">1</td><td class="num">10–20</td></tr>
+<tr><td>Buck 3,3 V og 1,8 V</td><td>TI TPS62840</td><td class="num">2</td><td class="num">10–20</td></tr>
+<tr><td>Lastbryter</td><td>TI TPS22916</td><td class="num">2</td><td class="num">5–10</td></tr>
+<tr><td>Komparator strømbrudd</td><td>TI TLV7031</td><td class="num">1</td><td class="num">5–10</td></tr>
+<tr><td>Inngangsvern</td><td>LM74700-Q1, TVS, sikring</td><td class="num">1 sett</td><td class="num">30–60</td></tr>
+<tr><td>RF-brytere intern/ekstern</td><td>SPDT (Skyworks, pSemi)</td><td class="num">3</td><td class="num">15–30</td></tr>
+<tr><td>Reservebatteri</td><td>1S Li-ion 18650, lavtemperatur</td><td class="num">1</td><td class="num">60–120</td></tr>
+<tr><td>Eksterne antenner</td><td>LTE, LoRa, aktiv GNSS</td><td class="num">3</td><td class="num">250–450</td></tr>
+<tr><td>Kontakter</td><td>Deutsch DT, SMA/FAKRA</td><td class="num">1 sett</td><td class="num">80–150</td></tr>
+<tr><td>Kretskort</td><td>4 lag, ca. 100 × 70 mm</td><td class="num">1</td><td class="num">50–150</td></tr>
+<tr><td>Kapsling</td><td>IP67 polykarbonat</td><td class="num">1</td><td class="num">100–250</td></tr>
+<tr><td>Passive og diverse</td><td>R, C, L, testpunkter</td><td class="num">1 sett</td><td class="num">40–80</td></tr>
+</table>
+<h3>Kamerapod (per stk)</h3>
+<table>
+<tr><th>Funksjon</th><th>Komponent</th><th class="num">Antall</th><th class="num">Ca. kr/stk</th></tr>
+<tr><td>AI-prosessor</td><td>Himax WiseEye2 (HX6538)</td><td class="num">1</td><td class="num">60–110</td></tr>
+<tr><td>Bildebrikke + objektiv</td><td>Himax HM0360, M7-objektiv ca. 100°</td><td class="num">1</td><td class="num">50–90</td></tr>
+<tr><td>IR-belysning</td><td>940 nm LED + driver</td><td class="num">1 sett</td><td class="num">20–40</td></tr>
+<tr><td>Anti-masking</td><td>Vishay VCNL4040</td><td class="num">1</td><td class="num">10–20</td></tr>
+<tr><td>Akselerometer</td><td>ST LIS2DW12</td><td class="num">1</td><td class="num">8–15</td></tr>
+<tr><td>Sikkerhetsbrikke</td><td>Microchip ATECC608B</td><td class="num">1</td><td class="num">8–15</td></tr>
+<tr><td>Flash 16 MB</td><td>SPI NOR</td><td class="num">1</td><td class="num">8–15</td></tr>
+<tr><td>CAN FD</td><td>MCP2518FD + TCAN3413</td><td class="num">1 sett</td><td class="num">30–55</td></tr>
+<tr><td>Strøm og varme</td><td>Buck, LDO, varmeelement, NTC</td><td class="num">1 sett</td><td class="num">20–40</td></tr>
+<tr><td>Kretskort</td><td>4 lag, ca. 25 × 25 mm</td><td class="num">1</td><td class="num">15–30</td></tr>
+<tr><td>Kapsling, vindu og kabel</td><td>IP67, herdet glass, stålflettet kabel 5 m</td><td class="num">1</td><td class="num">100–200</td></tr>
+<tr><td colspan="3"><b>Sum per pod</b></td><td class="num"><b>ca. 330–635</b></td></tr>
+</table>
+<h3>Utvidelsesboks</h3>
+<table>
+<tr><th>Funksjon</th><th>Komponent</th><th class="num">Antall</th><th class="num">Ca. kr/stk</th></tr>
+<tr><td>Prosessor</td><td>STM32H563</td><td class="num">1</td><td class="num">60–100</td></tr>
+<tr><td>Lagring</td><td>eMMC 8 GB</td><td class="num">1</td><td class="num">50–90</td></tr>
+<tr><td>Bussegmenter</td><td>TCAN1462</td><td class="num">2</td><td class="num">10–20</td></tr>
+<tr><td>Porter</td><td>TPS1663 eFuse + M12-kontakt</td><td class="num">4</td><td class="num">65–125</td></tr>
+<tr><td>Innganger og utganger</td><td>8 EOL-innganger med vern, 2 relé, RS-485</td><td class="num">1 sett</td><td class="num">70–140</td></tr>
+<tr><td>Strøm og sabotasje</td><td>Buck, lokkbryter, OPT3001</td><td class="num">1 sett</td><td class="num">40–70</td></tr>
+<tr><td>Kapsling, kort og diverse</td><td>IP67, 4 lag, passive komponenter</td><td class="num">1</td><td class="num">180–350</td></tr>
+<tr><td colspan="3"><b>Sum (full variant)</b></td><td class="num"><b>ca. 700–1 300</b></td></tr>
+</table>
+<p>Kameravarianten med to porter og uten innganger anslås til ca. 450–850 kr.</p>
+<p>Komplett løsning per maskin med hovedenhet, kamerahub og to kamerapods blir dermed ca. 2 350–4 400 kr i komponenter ved små serier. Prisene er ikke kontrollert mot leverandør.</p>
+<h3>Sensornoder og stasjonær enhet</h3>
+<table>
+<tr><th>Del</th><th class="num">Ca. kr</th></tr>
+<tr><td>Sensornode (mal), uten selve sensoren</td><td class="num">200–400</td></tr>
+<tr><td>Stasjonær enhet: hovedenhet + utvidelsesboks i felles kapsling</td><td class="num">1 800–3 400</td></tr>
+<tr><td>Strømforsyning 230 V (brakke)</td><td class="num">100–180</td></tr>
+<tr><td>Takantenne med kabel (container)</td><td class="num">300–600</td></tr>
+<tr><td>Utendørs sirene og strobe</td><td class="num">300–700</td></tr>
+<tr><td>Batteripakke 12 V 50 Ah LiFePO4, eventuelt solcelle og lader</td><td class="num">2 000–5 000</td></tr>
+</table>
+<h3>CAN og BLE-gateway i hovedenheten (v1.1)</h3>
+<table>
+<tr><th>Funksjon</th><th>Komponent</th><th class="num">Antall</th><th class="num">Ca. kr/stk</th></tr>
+<tr><td>Koprosessor og BLE-gateway</td><td>Nordic nRF54L15 (modul)</td><td class="num">1</td><td class="num">40–70</td></tr>
+<tr><td>CAN-kontroller</td><td>Microchip MCP2518FD</td><td class="num">1</td><td class="num">20–35</td></tr>
+<tr><td>Isolert CAN-transceiver</td><td>TI ISO1042</td><td class="num">1</td><td class="num">25–45</td></tr>
+<tr><td>I/O-utvider 16 bit (erstatter 8 bit)</td><td>NXP PCAL6416A</td><td class="num">1</td><td class="num">5–10 ekstra</td></tr>
+<tr><td>Y-kabel til diagnosekontakt</td><td>Deutsch 9-pin, maskintilpasset</td><td class="num">1</td><td class="num">100–190</td></tr>
+<tr><td colspan="3"><b>Sum</b></td><td class="num"><b>ca. 190–350</b></td></tr>
+</table>
+<h3>Utstyrsbrikker</h3>
+<table>
+<tr><th>Del</th><th>Brikke S</th><th>Brikke L</th></tr>
+<tr><td>Radio og prosessor</td><td>nRF54L15, 25–40 kr</td><td>nRF54L15 + SX1262-modul, 85–140 kr</td></tr>
+<tr><td>Akselerometer og barometer</td><td>LIS2DW12 + BMP585, 25–45 kr</td><td>LIS2DW12 + BMP585, 25–45 kr</td></tr>
+<tr><td>Batteri</td><td>ER14250, 25–40 kr</td><td>AA Li-SOCl2, 40–60 kr</td></tr>
+<tr><td>Antenne, NFC-spole, kort, passive</td><td>25–45 kr</td><td>35–60 kr</td></tr>
+<tr><td>Kapsling, O-ring, skruer, innstøping</td><td>45–105 kr</td><td>70–145 kr</td></tr>
+<tr><td><b>Sum per brikke</b></td><td><b>ca. 150–275 kr</b></td><td><b>ca. 260–450 kr</b></td></tr>
+</table>
+<p>Hengerenheten (LTE-M/NTN, GNSS, batteri og kabel til 13-pins kontakt) anslås til ca. 700–1 200 kr. En fast gateway for brakka med LTE-M, LoRa og BLE anslås til ca. 800–1 500 kr.</p>
+
+<section>
+<h2><span class="n">23</span>Kostnadskalkyle</h2>
+<p class="lead">Kalkylen sammenligner tre veier: egenutviklet løsning, hyllevare der det finnes, og en mellomløsning. Alarmstasjon er ikke med i noen av dem. Den er en tjeneste kunden selv kan aktivere senere, og plattformen forberedes for det uten at koblingen bygges i første omgang. Alle tall er grove anslag uten tilbud fra leverandører.</p>
+
+<h3>A. Egenutviklet: produksjonskost per enhet</h3>
+<p>Komponenter fra kapittel 22, med 20–35 % i tillegg for montering av kretskort, test, innstøping, montering og emballasje ved serier på noen hundre til et par tusen.</p>
+<table>
+<tr><th>Enhet</th><th class="num">Komponenter (kr)</th><th class="num">Produksjon (kr)</th><th class="num">Totalt per stk (kr)</th></tr>
+<tr><td>Hovedenhet maskin (v1.1)</td><td class="num">1 440–2 650</td><td class="num">300–600</td><td class="num"><b>1 750–3 250</b></td></tr>
+<tr><td>Kamerapod</td><td class="num">330–635</td><td class="num">100–200</td><td class="num"><b>430–835</b></td></tr>
+<tr><td>Kamerahub (2 porter)</td><td class="num">450–850</td><td class="num">150–300</td><td class="num"><b>600–1 150</b></td></tr>
+<tr><td>Utvidelsesboks, full</td><td class="num">700–1 300</td><td class="num">150–300</td><td class="num"><b>850–1 600</b></td></tr>
+<tr><td>Sensornode (uten sensor)</td><td class="num">200–400</td><td class="num">60–120</td><td class="num"><b>260–520</b></td></tr>
+<tr><td>Brikke S</td><td class="num">150–275</td><td class="num">40–80</td><td class="num"><b>190–355</b></td></tr>
+<tr><td>Brikke L</td><td class="num">260–450</td><td class="num">60–100</td><td class="num"><b>320–550</b></td></tr>
+<tr><td>Hengerenhet</td><td class="num">700–1 200</td><td class="num">150–250</td><td class="num"><b>850–1 450</b></td></tr>
+<tr><td>Stasjonær enhet brakke (uten kamera)</td><td class="num">2 500–4 900</td><td class="num">400–700</td><td class="num"><b>2 900–5 600</b></td></tr>
+</table>
+<p>Maskin med hovedenhet, kamerahub og to pods: ca. 3 200–6 100 kr. Store serier kan gi 20–40 % lavere pris, prototypeserier på 10–50 stk to til tre ganger høyere.</p>
+
+<h3>B. Hyllevare: hva kan kjøpes ferdig</h3>
+<table>
+<tr><th style="width:14%">Behov</th><th>Ferdig produkt (eksempel)</th><th class="num" style="width:14%">Kr (anslag)</th><th style="width:28%">Hva man taper mot A</th></tr>
+<tr><td>Maskin</td><td>Telematikkenhet for anleggsmaskiner med CAN, Bluetooth for brikker og digitale innganger, f.eks. Teltonika FMC650. Kabelsløyfe rundt GPS-utstyret og lokkbryter kobles på inngangene, sirene på en utgang. Prisen inkluderer monteringssett.</td><td class="num">2 000–4 000</td><td>Ingen radar eller persongjenkjenning, ingen LoRa mellom maskiner, svakere vern mot jamming (må avklares per modell)</td></tr>
+<tr><td>Kamera på maskin</td><td>Kamera koblet til trackeren, f.eks. Teltonika DualCam (bilde og video ved hendelse, minnekort)</td><td class="num">2 000–3 500</td><td>Ingen anti-masking eller AI i kameraet, laget for kjøretøy</td></tr>
+<tr><td>Utstyrsbrikke</td><td>Bluetooth-brikke, f.eks. Teltonika EYE Beacon (IP67, inntil 8–10 år batteri) eller MOKO M6 (IP67, byttbart batteri, akselerometer)</td><td class="num">200–350</td><td>Ingen løftdeteksjon, ikke skjult ID</td></tr>
+<tr><td>Brakke og container</td><td>Trådløst alarmsystem, f.eks. Ajax: Hub 2 Plus, MotionCam Outdoor med fotoverifisering og anti-masking, dørkontakter og sirene. Styres i Ajax-appen. Alarmstasjon er valgfritt. Pris per bygg.</td><td class="num">10 000–15 000</td><td>Eget system og egen app. Container uten strøm trenger batteripakke eller solcelle.</td></tr>
+<tr><td>Abonnement</td><td>IoT-SIM, f.eks. 1NCE (10 euro for 10 år og 500 MB)</td><td class="num">ca. 120</td><td>500 MB holder for brikker og lite trafikk, ikke for heartbeat hvert 2. minutt med bilder</td></tr>
+</table>
+<p style="font-size:8.5pt;color:var(--muted)">Prisene er anslått ut fra europeiske nettbutikker der de var tilgjengelige (Ajax Hub 2 Plus fra ca. 3 300 SEK, Teltonika EYE Beacon ca. 16 GBP eks. mva.) og ellers fra typiske markedspriser. De må bekreftes med forhandler. Funksjoner som jamming-deteksjon og CAN-støtte må sjekkes for valgt modell.</p>
+
+<h3>C. Mellomløsning</h3>
+<p>Egenutviklet hovedenhet og kamerapods for maskinene, der behovet for vern av GPS-utstyret er størst og ingen ferdige produkter fins. Brikker kjøpes ferdig (f.eks. Teltonika EYE eller MOKO M6) og pares med hovedenhetene, som allerede er Bluetooth-gateway. Brakker og containere sikres med et ferdig system som Ajax, styrt i sin egen app i første omgang.</p>
+
+<h3>Regneeksempel: ett anlegg</h3>
+<p>Tre maskiner med kamera, én brakke, én container uten strøm og ti utstyrsbrikker.</p>
+<table>
+<tr><th>Post</th><th class="num">A. Egenutviklet</th><th class="num">B. Hyllevare</th><th class="num">C. Mellomløsning</th></tr>
+<tr><td>3 maskiner</td><td class="num">9 600–18 300</td><td class="num">12 000–22 500</td><td class="num">9 600–18 300</td></tr>
+<tr><td>Brakke</td><td class="num">2 900–5 600</td><td class="num">10 000–15 000</td><td class="num">10 000–15 000</td></tr>
+<tr><td>Container med batteri</td><td class="num">4 900–10 600</td><td class="num">12 000–20 000</td><td class="num">12 000–20 000</td></tr>
+<tr><td>10 brikker</td><td class="num">1 900–3 550</td><td class="num">2 000–3 500</td><td class="num">2 000–3 500</td></tr>
+<tr><td><b>Sum utstyr per anlegg</b></td><td class="num"><b>19 000–38 000</b></td><td class="num"><b>36 000–61 000</b></td><td class="num"><b>34 000–57 000</b></td></tr>
+</table>
+<p>A er produksjonskost uten fortjeneste. B og C er innkjøpspriser med forhandlerens margin. Montering kommer i tillegg i alle tre.</p>
+
+<h3>Engangskostnader</h3>
+<table>
+<tr><th>Post</th><th class="num">A. Egenutviklet</th><th class="num">B. Hyllevare</th><th class="num">C. Mellomløsning</th></tr>
+<tr><td>Elektronikk og mekanikk med prototyper</td><td class="num">4–8 mill.</td><td class="num">0,2–0,5 mill. (monteringssett)</td><td class="num">2,5–5 mill.</td></tr>
+<tr><td>Støpeformer</td><td class="num">0,5–2 mill.</td><td class="num">–</td><td class="num">0,3–1 mill.</td></tr>
+<tr><td>Testing og godkjenning</td><td class="num">0,5–1,5 mill.</td><td class="num">–</td><td class="num">0,3–0,8 mill.</td></tr>
+<tr><td>Programvare</td><td class="num">14–30 mill.</td><td class="num">3–7 mill.</td><td class="num">9–18 mill.</td></tr>
+<tr><td>Pilot</td><td class="num">0,5–1 mill.</td><td class="num">0,2–0,5 mill.</td><td class="num">0,4–0,8 mill.</td></tr>
+<tr><td><b>Sum</b></td><td class="num"><b>ca. 20–42 mill.</b></td><td class="num"><b>ca. 3,5–8 mill.</b></td><td class="num"><b>ca. 12–26 mill.</b></td></tr>
+</table>
+<ul>
+<li><b>Programvare A</b> er anslaget fra kapittel 20 (16–34 mill.) minus koblingen mot alarmstasjoner med test og godkjenning, som utgjør ca. 2–4 mill.</li>
+<li><b>Programvare B</b> er en egen plattform og app som samler data fra trackere og brikker via leverandørens grensesnitt. Kan i starten erstattes helt av leverandørenes egne apper og plattformer mot abonnement, og da er engangskostnaden nær null.</li>
+<li><b>Programvare C</b> er fastvare for hovedenhet og kamera, plattform og app, uten utvidelsesboks, sensornoder, egne brikker og alarmstasjon.</li>
+</ul>
+
+<h3>Uten alarmstasjon: hva det betyr</h3>
+<ul>
+<li>Alarmer går til bedriftens egne folk via app, push, SMS og taleanrop, og til dashboardet.</li>
+<li>Ingen løpende kostnad til alarmstasjon og ingen krav til EN 50136-klassifisering i første omgang.</li>
+<li>Plattformen bygges slik at en DC-09-modul kan legges til senere og aktiveres per kunde eller anlegg. Hendelseskoder og kontonumre planlegges fra start.</li>
+<li>Uten vekter som rykker ut, må bedriften ha egen vaktordning eller ringeliste om natten, og politi varsles av dem selv.</li>
+</ul>
+
+<h3>Løpende kostnader (anslag)</h3>
+<table>
+<tr><th>Post</th><th>Anslag</th></tr>
+<tr><td>Mobilabonnement per enhet med heartbeat hvert 2. minutt</td><td>Ca. 3–5 MB per måned uten bilder. Krever større pakke enn 500 MB over 10 år. Pris per enhet må innhentes, typisk noen titalls kroner per måned.</td></tr>
+<tr><td>Satellitt som reserve</td><td>Ukjent, må innhentes fra operatør</td></tr>
+<tr><td>Skydrift av plattformen</td><td>Fast grunnkost og noen få kroner per enhet per måned ved stor skala</td></tr>
+<tr><td>Vakt og forvaltning av plattformen</td><td>Ca. 0,5–1,5 mill. kr per år ved innkjøpt drift</td></tr>
+<tr><td>Abonnement på leverandørplattform (B)</td><td>Per enhet per måned, må innhentes</td></tr>
+<tr><td>Alarmstasjon (valgfritt)</td><td>Pris per objekt per måned, avtales med stasjonen</td></tr>
+</table>
+
+<h3>Vurdering</h3>
+<p>Hyllevare (B) er raskest og billigst å komme i gang med, men verner GPS-utstyret dårligst mot sofistikerte tyver. Egenutvikling (A) gir lavest kost per enhet og eget produkt, men lønner seg først ved store volumer eller hvis løsningen skal selges til andre. Mellomløsningen (C) bruker utviklingspengene der ferdige produkter ikke strekker til, på selve maskinene.</p>
+<p>Anbefalt rekkefølge: start med B på ett eller to anlegg for å lære hva som virker og hva som mangler. Utvikle så maskinenheten i C hvis piloten viser at vernet av GPS-utstyret ikke er godt nok.</p>
+</section>
+
+<section class="cont">
+<h2><span class="n">24</span>Demo og prototyper</h2>
+<p>En interaktiv simulator viser konseptet for teamet: et kart over et anlegg med tre maskiner, mobilmast og satellitt, der man kan dra en person, en elg og en jammer rundt. Sentralens tilstander, enhetenes lokale tilstand og en hendelseslogg vises samtidig. Kameraene vises med synsfelt på kartet, gjenkjenner personer, sender bilder til sentralen når mobilnettet virker, og kan tildekkes, sprayes, blendes, vris eller kuttes for å vise anti-masking. Maskinene viser CAN-data, og fem utstyrsbrikker ligger på anlegget sammen med en gateway på brakka. Tolv scenarioer er innebygd, blant annet tyv mot gravemaskin, tyv dekker til kameraet, mobil- og bredbåndsjammer, skuff stjeles om natten, feil utstyr tas med, ingen mobildekning, drivstofftyveri og GPS-skjerm som demonteres.</p>
+<p>Simulatoren har miljøprofil per maskin og for alle samtidig (skog, landlig, by), scenarioet «Ulike miljøer per maskin», med kjernesone og ytre sone, folk som går forbi i byprofilen, og scenarioene «Lørdagskveld i byen» og «Lastebil og vind» som viser hvordan falske alarmer unngås.</p>
+<p>Simulatoren har også brakke og verktøycontainer med dørkontakt og vibrasjon på låsen, og brikkene melder løft.</p>
+<p>En egen prototype, <b>Varde Alarmsentral</b>, viser dashboardet for bedriften og appen side om side: alarmkø med prioritet, bilde, kart og hendelser, ringeliste, videresending til alarmstasjon med eksempel på SIA DC-09-melding, automatisk videresending etter 3 minutter, avarmering med Bluetooth-nærhet og Face ID, og utsjekk av utstyr med NFC.</p>
+<p>Begge bruker eksempelverdier fra dette dokumentet. De er publisert som private artifacts på claude.ai og må deles fra Del-menyen før andre kan åpne dem.</p>
+</section>
+</section>
+
+<section>
+<h2><span class="n">25</span>Åpne punkter og neste steg</h2>
+<h3>Åpne punkter</h3>
+<table>
+<tr><th style="width:30%">Tema</th><th>Spørsmål</th></tr>
+<tr><td>Batteri</td><td>Li-ion tåler ikke lading under 0 °C. Varmer, eller primærbatteri (Li-SOCl2) som virker ned til ca. −55 °C men ikke kan lades?</td></tr>
+<tr><td>Tilkobling</td><td>Får enheten strøm før hovedstrømbryteren, eller må den klare seg på batteri hver natt?</td></tr>
+<tr><td>GPS-utstyr</td><td>Kan kabelsløyfen monteres på utstyr fra Trimble, Leica og Topcon uten å bryte garantien?</td></tr>
+<tr><td>CAN-buss</td><td>Skal enheten lese maskinens CAN-buss i v2?</td></tr>
+<tr><td>Satellitt</td><td>Hvilken operatør og hvilket abonnement gjelder i Norge?</td></tr>
+<tr><td>Vaktselskap og forsikring</td><td>Krav til alarmoverføring, f.eks. SIA DC-09.</td></tr>
+<tr><td>Personvern</td><td>Lyd-, radar- og senere bildedata fra anleggsplasser, samt innloggingsdata for førere, må vurderes etter GDPR før pilot.</td></tr>
+<tr><td>Kameraovervåking</td><td>Skilting, rettslig grunnlag, lagringstid og DPIA må avklares før kameraene tas i bruk.</td></tr>
+<tr><td>Kameraplassering</td><td>Hvilke monteringspunkter gir best sikt til GPS-utstyret på de vanligste maskintypene, og hvor lang kabel trengs?</td></tr>
+<tr><td>360-kamera</td><td>Valg av sensor og AI-prosessor for 360-poden, og om fiskeøyeoppløsning holder til å kjenne igjen personer på 20–30 m.</td></tr>
+<tr><td>IR-rekkevidde</td><td>Hvor langt rekker 940 nm IR med 2–4 LED og M7-objektiv i praksis, og holder VGA-oppløsning til å kjenne igjen personer på 20–30 m?</td></tr>
+<tr><td>CAN-buss per maskintype</td><td>Hvilke meldinger sender GPS-utstyret og de vanligste maskinene, og godtar produsentene tilkobling uten at garantien ryker?</td></tr>
+<tr><td>Brikker: egen protokoll eller ferdig nett</td><td>Egen BLE-protokoll eller kommersielt nett som Wirepas? Avveining mellom kostnad, lisens og batteritid.</td></tr>
+<tr><td>Brikker: montering på stål</td><td>Hvor mye demper stålholderen radiosignalet, og hvilken rekkevidde gir det i praksis?</td></tr>
+<tr><td>Alarmstasjoner</td><td>Tar Avarn, Securitas og Vaktcompaniet imot SIA DC-09 fra en plattform som vår, med bilde-lenke? Hvilken EN 50136-kategori kreves, og hva koster mottak per objekt?</td></tr>
+<tr><td>Forsikring</td><td>Kan brakke- og containervarianten godkjennes etter FG-regler, og gir løsningen lavere egenandel eller premie?</td></tr>
+<tr><td>Sensorbuss</td><td>Egen protokoll eller CANopen FD med sikkerhetslag? Test av kabellengde ved 2 Mbit/s.</td></tr>
+<tr><td>Drift av plattformen</td><td>Bygge selv, eller bruke en IoT-plattform med egen regelmotor? Hvem har vakt for plattformen døgnet rundt?</td></tr>
+<tr><td>Falske alarmer</td><td>Terskler per miljøprofil må settes ut fra pilot i skog og by. Hvor lang læremodus trengs?</td></tr>
+<tr><td>Programvare</td><td>Én eller flere leverandører? Hvem har arkitektansvaret, og hvem drifter plattformen?</td></tr>
+<tr><td>Oppdatering av underleverandørers fastvare</td><td>Hvordan oppdateres u-blox-mottakeren, og hvilke hyllevareprodukter (brikker, kameraer) kan oppdateres eksternt via API?</td></tr>
+<tr><td>Cybersikkerhet</td><td>Hvordan gjelder RED-kravene (EN 18031) og CRA i Norge, og hva betyr det for dokumentasjon og støtteperiode?</td></tr>
+<tr><td>Regelverk radio</td><td>Bekrefte grenser for 868 MHz (effekt og sendetid) mot gjeldende norsk forskrift.</td></tr>
+<tr><td>Geofence</td><td>Standard buffer, hvor ofte posisjonen måles, og hvordan transport mellom anlegg registreres, må settes ut fra pilot.</td></tr>
+<tr><td>Elektriske skjemaer</td><td>Skjemaene rev. 0.1 må kontrolleres mot datablad og referansedesign: pinnenummer, verdier merket *, TXEN/RXEN på LoRa-modulen, kjernespenning til WiseEye2 og valg av nRF54L15-modul.</td></tr>
+</table>
+<h3>Neste steg</h3>
+<ol>
+<li>Prototype av utviklingskort: nRF9151 DK, A121 EVK, SX1262-kort, MAX-M10S-kort og LSM6DSV16X-kort.</li>
+<li>Måle strømforbruk i parkert modus og beregne batteritid.</li>
+<li>Teste radaren ute mot mennesker, hunder og hjortedyr på ulike avstander.</li>
+<li>Teste jamming-deteksjon i skjermet rom. Bruk av jammer utendørs er ulovlig.</li>
+<li>Prototype av kamerapod på utviklingskort med WiseEye2 og HM0360 (f.eks. Seeed Studio Grove Vision AI V2), og test av anti-masking med teip, spray og lommelykt.</li>
+<li>Logge CAN-trafikk på 2–3 maskintyper med GPS-utstyr, og kartlegge meldinger for drivstoff, turtall og GPS-utstyret.</li>
+<li>Lage prototype av Brikke S på nRF54L15-utviklingskort, måle strømforbruk og rekkevidde fra stålholder.</li>
+<li>Hente inn priser på trackere, brikker og Ajax-utstyr fra norske forhandlere, og på mobil- og satellittabonnement.</li>
+<li>Leverandør gjennomgår de elektriske skjemaene rev. 0.1, legger inn symboler og footprint fra produsentene og kjører elektrisk regelsjekk (ERC) før layout.</li>
+<li>Teste ett eller to ferdige produkter (f.eks. ABAX eller Trackunit og Reconeyez) i en kort pilot, og avklare åpne grensesnitt og mulig partnerskap.</li>
+<li>Kontakte Avarn, Securitas og Vaktcompaniet om tredjepartsmottak, krav og pris.</li>
+<li>Lage forespørsel til leverandører av fastvare, plattform og app med dette dokumentet som grunnlag, og hente inn tilbud på fase 1.</li>
+<li>Bygge første versjon av plattform og app med de viktigste flytene: alarmkø, videresending og avarmering.</li>
+<li>Lage prototype av utvidelsesboks og én sensornode, og teste sensorbussen med to kamerapods.</li>
+<li>Kontrollere alle pinner og komponentverdier mot datablad.</li>
+<li>Tegne skjema og layout i KiCad og bestille 5–10 kort.</li>
+<li>Forhåndstest for CE (RED og EMC) og kjøretøymiljø (ISO 7637-2 og ISO 16750).</li>
+</ol>
+<h3>Kilder</h3>
+<ul>
+<li>Nordic Semiconductor: nRF9151 Product Specification, Pin assignments – docs.nordicsemi.com/r/bundle/ps_nrf9151/page/pin.html</li>
+<li>Acconeer: A121 Electrical integration – docs.acconeer.com/en/latest/hw_integration/a121/electrical_integration.html</li>
+<li>Nordic Semiconductor: «Nordic's nRF9151 opens satellite and cellular IoT to a new class of connected devices», august 2026 – nordicsemi.com</li>
+<li>Acconeer: Presence Detection – acconeer.com</li>
+<li>Semtech: LoRa – Locating Stolen Vehicles (app brief) – semtech.com</li>
+<li>EE Journal: «Himax launches HM0360 ultra-low-power CMOS image sensor» – eejournal.com</li>
+<li>Arm Learning Paths: YOLO on Himax WiseEye2 – learn.arm.com</li>
+<li>Vishay: VCNL4040 Proximity and Ambient Light Sensor – vishay.com/en/product/84274</li>
+<li>Garmin: J1939 Information (PGN/SPN-oversikt) – www8.garmin.com</li>
+<li>Nordic Semiconductor: nRF54L15 Tag – nordicsemi.com/Products/Development-hardware/nRF54L15-Tag</li>
+<li>Nordic Semiconductor: «Asset tracking system combines Wirepas mesh networking, cellular connectivity, and GNSS», juli 2023 – nordicsemi.com</li>
+<li>Bosch Sensortec: BMP585 – bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp585</li>
+<li>ST / Mouser: LIS2DW12 – mouser.com/new/stmicroelectronics/stm-lis2dw12-accelerometer</li>
+<li>Avarn Security: Alarmstasjonstjenester – avarnsecurity.no/tjenester/alarmstasjonstjenester</li>
+<li>Securitas: Fjernovervåkning – securitas.no/vaare-sikkerhetstjenester/fjernovervakningstjenester</li>
+<li>Reconeyez: SIA DC-09 integration – support.reconeyez.com/docs/sia-dc-09-integration</li>
+<li>FG Skadeforebygging: regler for innbruddsalarm – fgsikring.no</li>
+<li>SVW: Cyber Resilience Act (status og datoer) – svw.no</li>
+<li>Nemko: European standard for cyber security testing (RED, EN 18031) – nemko.com</li>
+<li>Nordic Semiconductor: nRF Connect SDK, FOTA og MCUboot – nrfconnectdocs.nordicsemi.com og academy.nordicsemi.com</li>
+<li>nRF Cloud / Memfault: nRF91 Modem FOTA – docs.nrfcloud.com/docs/mcu/nrf-modem-fota</li>
+<li>Ajax Systems: Ajax updating procedure – ajax.systems/blog/ajax-updating-procedure</li>
+<li>Teltonika: FOTA WEB – teltonika-gps.com/products/solutions/fota-web</li>
+<li>ABAX: produkter for anlegg – abax.com</li>
+<li>Trackunit: Kin T200 – trackunit.com/press</li>
+<li>Reconeyez: How it works – reconeyez.com/how-it-works</li>
+<li>Ajax Systems: MotionCam Outdoor – ajax.systems/products/motioncam-outdoor</li>
+<li>Farmers Weekly: Trimble dealer Vantage improves GPS kit security – fwi.co.uk</li>
+<li>Navixy: Teltonika FMC650 – navixy.com/devices/teltonika/teltonika-fmc650</li>
+<li>Teltonika: DualCam – teltonika-gps.com/newsroom</li>
+<li>LinITX: Teltonika EYE Beacon – linitx.com</li>
+<li>MOKO Smart: M6 Industrial Tag – mokosmart.com/m6-industrial-tag</li>
+<li>PriceRunner SE: Ajax Hub 2 Plus – pricerunner.se</li>
+<li>PC-Welt: 1NCE 10 euro for 10 år – pcwelt.de</li>
+</ul>
+<p style="color:var(--muted);font-size:8.5pt">Øvrige komponentdata, priser og regelverksgrenser er basert på generell kunnskap og må verifiseres.</p>
+</section>
+</body></html>
